@@ -30,3 +30,10 @@ replay_pid*.log
 /wode1.png
 /FA9E2981C5084E0E57DFBAD4FED949A5.png
 /*二次元*.png
+
+# Python / Django
+__pycache__/
+*.pyc
+*.pyo
+db.sqlite3
+/backend/*/media/
