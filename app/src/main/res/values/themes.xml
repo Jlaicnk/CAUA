@@ -1,0 +1,42 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Base.Theme.T" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Primary -->
+        <item name="colorPrimary">@color/blue_primary</item>
+        <item name="colorOnPrimary">@color/on_blue_primary</item>
+        <item name="colorPrimaryContainer">@color/blue_container</item>
+        <item name="colorOnPrimaryContainer">@color/on_blue_container</item>
+
+        <!-- Secondary -->
+        <item name="colorSecondary">@color/green_accent</item>
+        <item name="colorOnSecondary">@color/on_green_accent</item>
+        <item name="colorSecondaryContainer">@color/green_container</item>
+        <item name="colorOnSecondaryContainer">@color/on_green_container</item>
+
+        <!-- Error -->
+        <item name="colorError">@color/red_error</item>
+        <item name="colorOnError">@color/on_red_error</item>
+        <item name="colorErrorContainer">@color/red_error_container</item>
+        <item name="colorOnErrorContainer">@color/on_red_error_container</item>
+
+        <!-- Surface / Background -->
+        <item name="android:colorBackground">@color/surface_light</item>
+        <item name="colorSurface">@color/surface_light</item>
+        <item name="colorOnSurface">@color/on_surface_light</item>
+        <item name="colorSurfaceVariant">@color/surface_variant_light</item>
+        <item name="colorOnSurfaceVariant">@color/on_surface_variant_light</item>
+
+        <!-- Outline -->
+        <item name="colorOutline">@color/outline_light</item>
+        <item name="colorOutlineVariant">@color/outline_variant_light</item>
+
+        <!-- Font -->
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <style name="Theme.T" parent="Base.Theme.T" />
+
+    <style name="ShapeAppearance.Circle" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+</resources>

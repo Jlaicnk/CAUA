@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- Primary - Blue -->
+    <color name="blue_primary">#FF1565C0</color>
+    <color name="on_blue_primary">#FFFFFFFF</color>
+    <color name="blue_container">#FFD1E4FF</color>
+    <color name="on_blue_container">#FF001D36</color>
+
+    <!-- Secondary - Green -->
+    <color name="green_accent">#FF43A047</color>
+    <color name="on_green_accent">#FFFFFFFF</color>
+    <color name="green_container">#FFC8E6C9</color>
+    <color name="on_green_container">#FF002106</color>
+
+    <!-- Error -->
+    <color name="red_error">#FFBA1A1A</color>
+    <color name="on_red_error">#FFFFFFFF</color>
+    <color name="red_error_container">#FFFFDAD6</color>
+    <color name="on_red_error_container">#FF410002</color>
+
+    <!-- Surface / Background -->
+    <color name="surface_light">#FFFAFAFA</color>
+    <color name="on_surface_light">#FF1A1C1E</color>
+    <color name="surface_variant_light">#FFDFE2EB</color>
+    <color name="on_surface_variant_light">#FF42474E</color>
+    <color name="outline_light">#FF73777F</color>
+    <color name="outline_variant_light">#FFC3C7CF</color>
+
+    <!-- Dark Surface -->
+    <color name="surface_dark">#FF101418</color>
+    <color name="on_surface_dark">#FFDFE3EB</color>
+    <color name="surface_variant_dark">#FF42474E</color>
+
+    <!-- Legacy (keep for compatibility) -->
+    <color name="blue_light">#FF90CAF9</color>
+    <color name="blue_light_dark">#FF42A5F5</color>
+    <color name="blue_light_container">#FFBBDEFB</color>
+    <color name="on_blue_light">#FFFFFFFF</color>
+</resources>

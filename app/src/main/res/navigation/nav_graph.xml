@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/navigation_home">
+
+    <fragment
+        android:id="@+id/navigation_home"
+        android:name="com.example.t.ui.home.HomeFragment"
+        android:label="@string/nav_home"
+        tools:layout="@layout/fragment_home" />
+
+    <fragment
+        android:id="@+id/navigation_events"
+        android:name="com.example.t.ui.events.EventsFragment"
+        android:label="@string/nav_events"
+        tools:layout="@layout/fragment_events" />
+
+    <fragment
+        android:id="@+id/navigation_tournament_detail"
+        android:name="com.example.t.ui.events.tournaments.TournamentDetailFragment"
+        android:label="赛事详情">
+        <argument android:name="tournamentId" app:argType="integer" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_teams"
+        android:name="com.example.t.ui.teams.TeamsFragment"
+        android:label="@string/nav_teams"
+        tools:layout="@layout/fragment_teams" />
+
+    <fragment
+        android:id="@+id/navigation_team_detail"
+        android:name="com.example.t.ui.teams.detail.TeamDetailFragment"
+        android:label="队伍详情">
+        <argument android:name="teamId" app:argType="integer" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_player_detail"
+        android:name="com.example.t.ui.teams.player.PlayerDetailFragment"
+        android:label="队员详情">
+        <argument android:name="playerId" app:argType="integer" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_profile"
+        android:name="com.example.t.ui.profile.ProfileFragment"
+        android:label="@string/nav_profile"
+        tools:layout="@layout/fragment_profile" />
+
+    <fragment
+        android:id="@+id/navigation_login"
+        android:name="com.example.t.ui.profile.login.LoginFragment"
+        android:label="登录" />
+
+    <fragment
+        android:id="@+id/navigation_favorite_team"
+        android:name="com.example.t.ui.profile.FavoriteTeamFragment"
+        android:label="选择主队" />
+
+</navigation>
