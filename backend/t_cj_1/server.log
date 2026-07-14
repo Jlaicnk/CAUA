@@ -1,8 +1,0 @@
-Performing system checks...
-
-System check identified no issues (0 silenced).
-June 24, 2026 - 15:46:44
-Django version 5.1.3, using settings 'config.settings'
-Starting development server at http://0.0.0.0:8000/
-Quit the server with CTRL-BREAK.
-

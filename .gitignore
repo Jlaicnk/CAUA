@@ -1,0 +1,45 @@
+*.iml
+.gradle
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+*.log
+hs_err_pid*.log
+replay_pid*.log
+
+# IDE
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.kotlin/
+
+# OS
+.DS_Store
+
+# Root temp files
+/shouye0.png
+/shouye1.png
+/saicheng0.png
+/saicheng1.png
+/duiwu0.png
+/duiwu1.png
+/wode0.png
+/wode1.png
+/FA9E2981C5084E0E57DFBAD4FED949A5.png
+/*二次元*.png
+/*.json
+/*.txt
+/*.docx
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Backend media
+backend/t_cj_1/media/
