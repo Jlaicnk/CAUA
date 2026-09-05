@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --bg: #ffffff;
   --surface: #ffffff;
   --surface-2: #f7f8fa;
@@ -26,6 +26,13 @@
   --shadow-card: 0 1px 2px rgba(20, 22, 34, 0.04), 0 4px 12px rgba(20, 22, 34, 0.04);
   --shadow-hover: 0 6px 20px rgba(20, 22, 34, 0.08);
   --shadow-soft: 0 4px 12px rgba(244, 91, 141, 0.15);
+  --swiss-text: #3d3a50;
+  --swiss-text-dim: #9a96ab;
+  --swiss-line: #f3dfe6;
+  --swiss-win: #1f9d7a;
+  --swiss-win-soft: rgba(31, 157, 122, 0.12);
+  --swiss-elim: #f45b8d;
+  --swiss-elim-soft: rgba(244, 91, 141, 0.12);
 }
 
 * {
@@ -107,7 +114,7 @@ img {
   box-shadow: var(--shadow-card);
 }
 
-/* 状态小标签 */
+/* 鐘舵€佸皬鏍囩 */
 .tag-pill {
   display: inline-flex;
   align-items: center;
@@ -153,12 +160,12 @@ img {
   }
 }
 
-/* 布局容器 */
+/* 甯冨眬瀹瑰櫒 */
 .main-layout {
   min-height: 100vh;
 }
 
-/* 顶部导航 */
+/* 椤堕儴瀵艰埅 */
 .top-nav {
   position: sticky;
   top: 0;
@@ -271,7 +278,7 @@ img {
   background: var(--surface-2);
 }
 
-/* 底部 Tab（窄屏） */
+/* 搴曢儴 Tab锛堢獎灞忥級 */
 .bottom-tab {
   position: fixed;
   bottom: 0;
@@ -348,14 +355,14 @@ img {
   }
 }
 
-/* 骨架 & 空态 */
+/* 楠ㄦ灦 & 绌烘€?*/
 .page-empty {
   text-align: center;
   padding: 60px 0;
   color: var(--text-2nd);
 }
 
-/* Banner 轮播 */
+/* Banner 杞挱 */
 .banner-wrap {
   border-radius: 18px;
   overflow: hidden;
@@ -402,7 +409,7 @@ img {
   }
 }
 
-/* 今日焦点卡片 */
+/* 浠婃棩鐒︾偣鍗＄墖 */
 .focus-card {
   border: 1px solid var(--border);
   border-radius: 18px;
@@ -467,7 +474,7 @@ img {
   color: var(--text-3rd);
 }
 
-/* 首页两栏 */
+/* 棣栭〉涓ゆ爮 */
 .home-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -499,7 +506,7 @@ img {
   }
 }
 
-/* 队伍小列表 */
+/* 闃熶紞灏忓垪琛?*/
 .mini-rank {
   background: #fff;
   border: 1px solid var(--border);
@@ -557,7 +564,7 @@ img {
   white-space: nowrap;
 }
 
-/* 视频卡片 */
+/* 瑙嗛鍗＄墖 */
 .video-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
@@ -625,7 +632,7 @@ img {
   -webkit-box-orient: vertical;
 }
 
-/* 视频播放模态内容 */
+/* 瑙嗛鎾斁妯℃€佸唴瀹?*/
 .video-modal-player {
   width: 100%;
   max-height: 60vh;
@@ -633,7 +640,7 @@ img {
   background: #000;
 }
 
-/* hover 通用卡片 */
+/* hover 閫氱敤鍗＄墖 */
 .hoverable-card {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -642,7 +649,7 @@ img {
   box-shadow: var(--shadow-hover);
 }
 
-/* 队标 */
+/* 闃熸爣 */
 .logo-bubble {
   border-radius: 50%;
   overflow: hidden;
@@ -653,7 +660,7 @@ img {
   flex-shrink: 0;
 }
 
-/* 图片兜底：名字首字徽章 */
+/* 鍥剧墖鍏滃簳锛氬悕瀛楅瀛楀窘绔?*/
 .init-badge {
   width: 100%;
   height: 100%;
@@ -666,7 +673,7 @@ img {
   text-transform: uppercase;
 }
 
-/* 领奖台 */
+/* 棰嗗鍙?*/
 .podium {
   display: grid;
   grid-template-columns: 1fr 1.15fr 1fr;
@@ -755,7 +762,7 @@ img {
   }
 }
 
-/* 普通排名行 */
+/* 鏅€氭帓鍚嶈 */
 .rank-row {
   display: flex;
   align-items: center;
@@ -784,7 +791,7 @@ img {
   font-variant-numeric: tabular-nums;
 }
 
-/* 通用圆角卡 */
+/* 閫氱敤鍦嗚鍗?*/
 .panel {
   background: #fff;
   border: 1px solid var(--border);
@@ -796,7 +803,7 @@ img {
   background: var(--surface-2);
 }
 
-/* 队员格子 */
+/* 闃熷憳鏍煎瓙 */
 .player-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -822,5 +829,287 @@ img {
 @media (max-width: 768px) {
   .player-grid {
     grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+  }
+}
+
+
+/* ============ 瑞士轮对阵板 (浅色主题) ============ */
+.swiss-board {
+  display: block;
+  background: transparent;
+}
+
+.swiss-board-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  overflow: visible;
+  padding: 2px 0 20px;
+}
+
+.swiss-board-empty {
+  padding: 40px 0;
+  text-align: center;
+  color: var(--text-2nd);
+}
+
+/* 轮次列：自带极淡粉底 + 细粉边，白底间隙 */
+.swiss-col {
+  flex: 0 1 163px;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  background: #fffafc;
+  border: 1px solid #f6dbe3;
+  border-radius: 12px;
+  padding: 8px 6px 8px;
+}
+
+.swiss-col-result {
+  flex: 0 0 158px;
+  justify-content: flex-start;
+}
+
+/* 占位空列 */
+.swiss-col-placeholder {
+  display: flex;
+  flex-direction: column;
+}
+
+.swiss-col-placeholder-dash {
+  align-self: flex-start;
+  width: 100%;
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed #f0cfdb;
+  border-radius: 8px;
+  color: #d3b6c2;
+  font-size: 11px;
+  padding: 10px 6px;
+  text-align: center;
+}
+
+/* terminal box vertical spacing inside merged columns */
+.swiss-box-top {
+  margin-bottom: 6px;
+}
+
+.swiss-box-bottom {
+  margin-top: 10px;
+}
+
+.swiss-result {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.swiss-result .swiss-box-bottom {
+  margin-top: 0;
+}
+
+.swiss-col-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 0 4px 8px;
+  font-weight: 800;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.swiss-col-date {
+  color: var(--text-2nd);
+  font-weight: 600;
+  font-size: 10px;
+}
+
+.swiss-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* record group = 淡粉白面板 */
+.swiss-group-panel {
+  background: #ffffff;
+  border: 1px solid #f6dbe3;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.swiss-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--swiss-text-dim);
+  letter-spacing: 1px;
+  background: rgba(244, 91, 141, 0.05);
+  border-bottom: 1px solid #f6dbe3;
+}
+
+.swiss-fixture {
+  position: relative;
+}
+
+.swiss-fixture-hint {
+  position: absolute;
+  right: 8px;
+  bottom: 2px;
+  color: var(--swiss-text-dim);
+  font-size: 10px;
+  pointer-events: none;
+}
+
+.swiss-fixture-sep {
+  height: 0;
+  border-bottom: 1px dashed #e3b7c9;
+  margin: 6px 8px;
+}
+
+.swiss-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 6px;
+  cursor: pointer;
+  transition: background 0.12s;
+  position: relative;
+}
+
+.swiss-row:hover {
+  background: rgba(244, 91, 141, 0.08);
+}
+
+.swiss-row:hover .swiss-row-name {
+  color: var(--primary-deep);
+}
+
+.swiss-row.is-dim {
+  opacity: 0.45;
+}
+
+.swiss-row-mark {
+  display: block;
+  width: 3px;
+  height: 100%;
+  min-height: 13px;
+  border-radius: 2px;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.swiss-row-mark.win {
+  background: var(--swiss-win);
+  box-shadow: 0 0 5px var(--swiss-win-soft);
+}
+
+.swiss-row-name {
+  flex: 1;
+  font-size: 12px;
+  color: var(--swiss-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.swiss-row-score {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--swiss-text-dim);
+  font-variant-numeric: tabular-nums;
+  min-width: 16px;
+  text-align: right;
+}
+
+.swiss-row-score.win {
+  color: var(--swiss-win);
+}
+
+.swiss-terminals {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.swiss-terminal {
+  border-radius: 10px;
+  padding: 8px;
+  border: 1px solid transparent;
+}
+
+.swiss-terminal.adv {
+  background: var(--swiss-win-soft);
+  border-color: rgba(31, 157, 122, 0.35);
+}
+
+.swiss-terminal.elim {
+  background: var(--swiss-elim-soft);
+  border-color: rgba(244, 91, 141, 0.35);
+}
+
+.swiss-terminal-title {
+  font-size: 11px;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.swiss-terminal.adv .swiss-terminal-title {
+  color: var(--swiss-win);
+}
+
+.swiss-terminal.elim .swiss-terminal-title {
+  color: var(--swiss-elim);
+}
+
+.swiss-terminal-teams {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.swiss-terminal-team {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.65);
+  border-radius: 6px;
+  padding: 3px 6px;
+  cursor: pointer;
+  color: var(--text);
+  transition: background 0.15s;
+}
+
+.swiss-terminal-team:hover {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.swiss-terminal-team span {
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 移动端：允许对阵图区域横向滑动 */
+@media (max-width: 900px) {
+  .swiss-board-row {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  .swiss-col {
+    flex: 0 0 230px;
+  }
+  .swiss-col-result {
+    flex: 0 0 170px;
   }
 }

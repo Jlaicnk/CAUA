@@ -4,4 +4,6 @@ export const getTeams = () => client.get('teams/')
 
 export const getTeam = (id) => client.get(`teams/${id}/`)
 
+export const getTeamHistory = (id) => client.get(`teams/${id}/history/`)
+
 export const getPlayer = (id) => client.get(`players/${id}/`)

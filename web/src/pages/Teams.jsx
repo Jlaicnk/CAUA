@@ -11,13 +11,14 @@ const RANK_STYLE = {
   3: { name: '季军', cls: 'third' },
 }
 
-function PodiumCard({ team }) {
+function PodiumCard({ team, pos }) {
   const navigate = useNavigate()
-  const rank = team.rank
+  // pos: 0 = 1st, 1 = 2nd, 2 = 3rd (by points)
+  const rank = pos + 1
   const meta = RANK_STYLE[rank]
   return (
     <div
-      className={`podium-item ${meta.cls === 'first' ? 'first' : ''}`}
+      className={`podium-item ${rank === 1 ? 'first' : ''}`}
       onClick={() => navigate(`/teams/${team.id}`)}
     >
       <div className={`podium-line ${meta.cls}`} />
@@ -30,23 +31,28 @@ function PodiumCard({ team }) {
         <TeamLogo logo={team.logo} name={team.name} size={rank === 1 ? 84 : 64} />
       </div>
       <div style={{ fontWeight: 800, fontSize: rank === 1 ? 19 : 16 }}>{team.name}</div>
-      <div className="text-2nd" style={{ marginTop: 6, fontSize: 13 }}>
-        综合排名 #{team.rank}
-        {team.song && (
-          <span style={{ marginLeft: 8, color: 'var(--primary-deep)' }}>
-            <PlayCircleFilled /> 有队歌
+      <div style={{ marginTop: 8 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 4 }}>
+          <span style={{ fontSize: 26, fontWeight: 800, color: 'var(--primary-deep)', fontVariantNumeric: 'tabular-nums' }}>
+            {team.points ?? 1000}
           </span>
-        )}
+          <span className="text-2nd" style={{ fontSize: 12 }}>PTS</span>
+        </span>
       </div>
+      {team.song && (
+        <span style={{ marginLeft: 8, color: 'var(--primary-deep)', fontSize: 12 }}>
+          <PlayCircleFilled /> 有队歌
+        </span>
+      )}
     </div>
   )
 }
 
-function RankRow({ team }) {
+function RankRow({ team, displayRank }) {
   const navigate = useNavigate()
   return (
     <div className="rank-row" onClick={() => navigate(`/teams/${team.id}`)}>
-      <span className="rank-no">{team.rank}</span>
+      <span className="rank-no">{displayRank}</span>
       <TeamLogo logo={team.logo} name={team.name} size={40} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -63,6 +69,9 @@ function RankRow({ team }) {
           <PlayCircleFilled style={{ color: 'var(--primary-deep)' }} /> 队歌
         </span>
       )}
+      <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--primary-deep)', fontVariantNumeric: 'tabular-nums', minWidth: 52, textAlign: 'right' }}>
+        {team.points ?? 1000}
+      </span>
       <RightOutlined style={{ color: 'var(--text-3rd)', fontSize: 12 }} />
     </div>
   )
@@ -81,13 +90,12 @@ export default function Teams() {
   }, [])
 
   const top3 = teams.slice(0, 3)
-  const rest = teams.slice(3)
 
   return (
     <div className="page">
       <div className="section-head" style={{ marginTop: 4 }}>
         <h2 className="section-title">队伍排行榜</h2>
-        <span className="text-2nd" style={{ fontSize: 13 }}>共 {teams.length} 支队伍</span>
+        <span className="text-2nd" style={{ fontSize: 13 }}>按积分排名 · 共 {teams.length} 支队伍</span>
       </div>
 
       {loading ? (
@@ -96,9 +104,10 @@ export default function Teams() {
         <>
           {top3.length > 0 && (
             <div className="podium" style={{ marginBottom: 20 }}>
-              {[top3[1], top3[0], top3[2]].filter(Boolean).map((t) => (
-                <PodiumCard key={t.id} team={t} />
-              ))}
+              {[top3[1], top3[0], top3[2]].filter(Boolean).map((t) => {
+                const pos = t === top3[0] ? 0 : t === top3[1] ? 1 : 2
+                return <PodiumCard key={t.id} team={t} pos={pos} />
+              })}
             </div>
           )}
 
@@ -106,8 +115,8 @@ export default function Teams() {
             <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800 }}>完整排名</h3>
           </div>
           <div>
-            {rest.map((t) => (
-              <RankRow key={t.id} team={t} />
+            {teams.map((t, i) => (
+              <RankRow key={t.id} team={t} displayRank={i + 1} />
             ))}
           </div>
         </>

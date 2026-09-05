@@ -12,11 +12,31 @@ class PlayerInline(admin.TabularInline):
 
 @admin.register(Team)
 class TeamAdmin(admin.ModelAdmin):
-    list_display = ["rank", "name", "logo_preview", "song_link", "player_count"]
+    list_display = ["points", "rank", "name", "logo_preview", "song_link", "player_count"]
     list_display_links = ["name"]
     search_fields = ["name"]
-    ordering = ["rank"]
+    ordering = ["-points", "rank"]
     inlines = [PlayerInline]
+    actions = ["reset_points_to_1000"]
+
+    def save_model(self, request, obj, form, change):
+        old = None
+        if change:
+            old = Team.objects.filter(pk=obj.pk).values_list("points", flat=True).first()
+        super().save_model(request, obj, form, change)
+        if change and old is not None and old != obj.points:
+            from teams.rating import log_manual_change
+            log_manual_change(obj, obj.points, old_points=old)
+
+    @admin.action(description="重置所选队伍积分为 1000")
+    def reset_points_to_1000(self, request, queryset):
+        from teams.rating import log_reset
+        count = 0
+        for t in queryset:
+            if t.points != 1000:
+                log_reset(t)
+                count += 1
+        self.message_user(request, f"已将 {count} 支队伍积分重置为 1000")
 
     @admin.display(description="队标")
     def logo_preview(self, obj):
@@ -37,13 +57,43 @@ class TeamAdmin(admin.ModelAdmin):
 
 @admin.register(Player)
 class PlayerAdmin(admin.ModelAdmin):
-    list_display = ["number", "name", "avatar_preview", "position", "team"]
+    list_display = ["number", "name", "avatar_preview", "position", "team", "overall_display"]
     list_filter = ["team", "position"]
     search_fields = ["name", "team__name"]
     ordering = ["team", "number"]
+    readonly_fields = ["overall_display"]
+
+    fieldsets = [
+        ("基本信息", {"fields": ["team", "number", "name", "position", "avatar", "bio"]}),
+        ("进攻意识与射门", {"fields": [
+            "attacking_awareness", "shooting", "heading", "set_play", "curl", "kicking_power",
+        ]}),
+        ("传球", {"fields": ["low_pass", "lofted_pass"]}),
+        ("盘带与控球", {"fields": [
+            "ball_control", "dribbling", "tight_control", "balance",
+        ]}),
+        ("速度", {"fields": ["speed", "acceleration"]}),
+        ("身体与力量", {"fields": [
+            "physical_contact", "stamina", "jumping",
+        ]}),
+        ("防守", {"fields": [
+            "defensive_awareness", "ball_winning", "aggression",
+        ]}),
+        ("守门员", {"fields": [
+            "gk_awareness", "gk_catching", "gk_clearing", "gk_reflexes", "gk_reach",
+        ]}),
+        ("非惯用脚 / 状态 (0-5)", {"fields": [
+            "weak_foot_usage", "weak_foot_accuracy", "condition", "injury_resistance",
+        ]}),
+        ("总评", {"fields": ["overall_display"]}),
+    ]
 
     @admin.display(description="头像")
     def avatar_preview(self, obj):
         if obj.avatar:
             return format_html('<img src="{}" style="width:30px;height:30px;object-fit:contain;border-radius:50%">', obj.avatar.url)
         return ""
+
+    @admin.display(description="OVR")
+    def overall_display(self, obj):
+        return f"{obj.overall}"

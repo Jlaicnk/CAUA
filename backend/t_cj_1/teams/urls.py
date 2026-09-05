@@ -7,6 +7,7 @@ router.register("teams", views.TeamViewSet, basename="team")
 
 urlpatterns = [
     path("players/<int:pk>/", views.PlayerDetailView.as_view(), name="player-detail"),
+    path("teams/<int:pk>/history/", views.TeamHistoryView.as_view(), name="team-history"),
 ]
 
 urlpatterns += router.urls
