@@ -4,6 +4,26 @@
 
 ---
 
+## 一键启动（本机快速体验）
+
+> 需要已安装 Anaconda + MySQL，且已运行过一次 `setup.bat`。
+
+| 脚本 | 作用 |
+|------|------|
+| `setup.bat` | 首次配置：创建 conda 环境、安装前后端依赖、初始化数据库（已有数据会自动跳过） |
+| `start.bat` | 一键启动：确保 MySQL 运行 → 启动 Django 后端(8000) → 启动 Web 前端(5173) → 打开浏览器 |
+| `stop.bat` | 一键停止所有服务 |
+
+启动后访问：
+- Web 前端：`http://127.0.0.1:5173/`
+- Django API：`http://127.0.0.1:8000/api/`
+- Django Admin：`http://127.0.0.1:8000/admin/`
+
+> 脚本默认配置：conda 环境 `CAUA`、MySQL 服务 `MySQL97`、数据库 `django_kg`。
+> 如需自定义，可直接编辑 `scripts\start-services.ps1` / `scripts\setup.ps1` 顶部的参数。
+
+---
+
 ## 目录
 
 - [项目结构](#项目结构)
