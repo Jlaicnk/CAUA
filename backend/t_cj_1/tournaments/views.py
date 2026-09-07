@@ -1,6 +1,7 @@
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.generics import RetrieveAPIView
+from django.db.models import Q
 from .models import Tournament, Match
 from .serializers import (
     TournamentListSerializer,
@@ -9,6 +10,8 @@ from .serializers import (
     MatchDetailSerializer,
     StandingsSerializer,
 )
+from teams.serializers import TeamListSerializer
+from teams.models import PointsChange
 from . import swiss
 
 
@@ -117,3 +120,49 @@ class MatchViewSet(viewsets.ReadOnlyModelViewSet):
         if self.action == "list":
             return MatchListSerializer
         return MatchDetailSerializer
+
+
+class MatchHistoryView(RetrieveAPIView):
+    """两队近期交手记录(不含本场, 最近5场) + 本场积分变动。"""
+    queryset = Match.objects.all()
+
+    def retrieve(self, request, *args, **kwargs):
+        match = self.get_object()
+        a, b = match.home_team, match.away_team
+
+        h2h_qs = (
+            Match.objects
+            .filter(
+                Q(home_team=a, away_team=b) | Q(home_team=b, away_team=a),
+                status="finished",
+            )
+            .exclude(pk=match.pk)
+            .select_related("home_team", "away_team", "tournament")
+            .order_by("-match_date", "-id")[:5]
+        )
+
+        rows = []
+        for m in h2h_qs:
+            rows.append({
+                "match_id": m.id,
+                "match_date": m.match_date.isoformat(),
+                "tournament_name": m.tournament.name,
+                "round": m.round,
+                "status": m.status,
+                "home_team": TeamListSerializer(m.home_team, context={"request": request}).data,
+                "away_team": TeamListSerializer(m.away_team, context={"request": request}).data,
+                "home_score": m.home_score,
+                "away_score": m.away_score,
+            })
+
+        def team_change(team):
+            pc = PointsChange.objects.filter(team=team, match=match).order_by("-id").first()
+            return pc.amount if pc else None
+
+        data = {
+            "match_id": match.id,
+            "home_points_change": team_change(match.home_team),
+            "away_points_change": team_change(match.away_team),
+            "head_to_head": rows,
+        }
+        return Response(data)

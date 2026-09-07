@@ -7,6 +7,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 
 const Home = lazy(() => import('./pages/Home'))
 const Schedule = lazy(() => import('./pages/Schedule'))
+const MatchDetail = lazy(() => import('./pages/MatchDetail'))
 const TournamentList = lazy(() => import('./pages/TournamentList'))
 const TournamentDetail = lazy(() => import('./pages/TournamentDetail'))
 const Teams = lazy(() => import('./pages/Teams'))
@@ -183,6 +184,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/schedule" element={<Schedule />} />
+            <Route path="/matches/:id" element={<MatchDetail />} />
             <Route path="/tournaments" element={<TournamentList />} />
             <Route path="/tournaments/:id" element={<TournamentDetail />} />
             <Route path="/teams" element={<Teams />} />

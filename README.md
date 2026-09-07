@@ -370,6 +370,7 @@ npm run build
 | `/schedule` | 赛程 | 按赛事筛选，按状态分组 |
 | `/tournaments` | 赛事列表 | 赛事状态标签 |
 | `/tournaments/:id` | 赛事详情 | 简介/规则 + 瑞士轮对阵图（轮次列+晋级/淘汰盒）+ 队伍状态列表 + 本地模拟推演 |
+| `/matches/:id` | 比赛详情 | 两队/比分/积分变动 + 两队近期交手记录（最近5场，无则暂无） |
 | `/teams` | 队伍排行榜 | 前三名领奖台 + 完整排名（按积分） |
 | `/teams/:id` | 队伍详情 | 简介 + 队歌播放 + 近期10场战绩与积分折线图 + 队员网格 |
 | `/players/:id` | 队员详情 | 角色档案卡 |
@@ -433,6 +434,7 @@ Authorization: Bearer <access_token>
 | GET | `/api/matches/` | 赛程列表 |
 | GET | `/api/matches/?tournament={id}` | 按赛事筛选赛程 |
 | GET | `/api/matches/{id}/` | 比赛详情 |
+| GET | `/api/matches/{id}/history/` | 两队近期交手记录（最近5场，不含本场）+ 本场两队积分变动 |
 
 #### 首页
 

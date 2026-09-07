@@ -37,6 +37,7 @@ function statusMeta(status) {
 export function MatchCard({ match, showTournament = true }) {
   const navigate = useNavigate()
   const {
+    id: matchId,
     home_team: homeTeam,
     away_team: awayTeam,
     home_score: homeScore,
@@ -51,6 +52,11 @@ export function MatchCard({ match, showTournament = true }) {
   const openTeam = (e, id) => {
     e.stopPropagation()
     navigate(`/teams/${id}`)
+  }
+
+  const openMatch = (e) => {
+    e.stopPropagation()
+    if (matchId != null) navigate(`/matches/${matchId}`)
   }
 
   return (
@@ -84,7 +90,16 @@ export function MatchCard({ match, showTournament = true }) {
           </span>
         </div>
 
-        <div style={{ flexShrink: 0, textAlign: 'center', minWidth: 90, padding: '0 4px' }}>
+        <div
+          onClick={openMatch}
+          title="查看比赛详情"
+          style={{
+            flexShrink: 0, textAlign: 'center', minWidth: 90, padding: '6px 4px', cursor: 'pointer',
+            borderRadius: 10, transition: 'background 0.15s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(244,91,141,0.08)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+        >
           {hasScore ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               <span style={{ fontSize: 28, fontWeight: 800, fontVariantNumeric: 'tabular-nums', fontFamily: "'Bahnschrift','DIN Alternate','Segoe UI',sans-serif" }}>

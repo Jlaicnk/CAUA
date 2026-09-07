@@ -8,6 +8,7 @@ router.register("matches", views.MatchViewSet, basename="match")
 
 urlpatterns = [
     path("tournaments/<int:pk>/standings/", views.StandingsView.as_view(), name="tournament-standings"),
+    path("matches/<int:pk>/history/", views.MatchHistoryView.as_view(), name="match-history"),
 ]
 
 urlpatterns += router.urls
