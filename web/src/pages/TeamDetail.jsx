@@ -87,7 +87,7 @@ export default function TeamDetail() {
           <div style={{ flex: 1, minWidth: 220 }}>
             <div style={{ fontSize: 24, fontWeight: 800 }}>{team.name}</div>
             <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <Tag style={{ borderRadius: 6, marginInlineEnd: 0 }}>综合排名 #{team.rank}</Tag>
+              <Tag style={{ borderRadius: 6, marginInlineEnd: 0 }}>排名 {team.leaderboard_rank ?? team.rank}</Tag>
               <Tag color="magenta" style={{ borderRadius: 6, marginInlineEnd: 0, fontWeight: 700 }}>
                 积分 {team.points ?? 1000}
               </Tag>

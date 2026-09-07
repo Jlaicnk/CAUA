@@ -41,14 +41,31 @@ class PlayerDetailSerializer(serializers.ModelSerializer):
 
 
 class TeamListSerializer(serializers.ModelSerializer):
+    leaderboard_rank = serializers.SerializerMethodField()
+
     class Meta:
         model = Team
-        fields = ["id", "name", "logo", "rank", "song", "points"]
+        fields = ["id", "name", "logo", "rank", "song", "points", "leaderboard_rank"]
+
+    def get_leaderboard_rank(self, obj):
+        from .models import Team
+        from django.db.models import Q
+        return Team.objects.filter(
+            Q(points__gt=obj.points) | Q(points=obj.points, rank__lt=obj.rank)
+        ).count() + 1
 
 
 class TeamDetailSerializer(serializers.ModelSerializer):
     players = PlayerSerializer(many=True, read_only=True)
+    leaderboard_rank = serializers.SerializerMethodField()
 
     class Meta:
         model = Team
-        fields = ["id", "name", "logo", "rank", "description", "song", "points", "players"]
+        fields = ["id", "name", "logo", "rank", "description", "song", "points", "players", "leaderboard_rank"]
+
+    def get_leaderboard_rank(self, obj):
+        from .models import Team
+        from django.db.models import Q
+        return Team.objects.filter(
+            Q(points__gt=obj.points) | Q(points=obj.points, rank__lt=obj.rank)
+        ).count() + 1

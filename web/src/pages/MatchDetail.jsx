@@ -93,7 +93,7 @@ export default function MatchDetail() {
               ) : (
                 <div style={{ fontSize: 30, fontWeight: 800, color: 'var(--text-3rd)' }}>VS</div>
               )}
-              <div className="text-2nd" style={{ fontSize: 12, marginTop: 4 }}>完场</div>
+              <div className="text-2nd" style={{ fontSize: 12, marginTop: 4 }}>{hasScore ? '完场' : '待开始'}</div>
             </div>
 
             {/* away */}
