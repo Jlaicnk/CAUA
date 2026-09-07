@@ -78,11 +78,11 @@ export default function FavoriteTeam() {
                 style={{ borderColor: isFav ? 'var(--primary)' : undefined, background: isFav ? 'var(--primary-soft)' : undefined }}
                 onClick={() => choose(t)}
               >
-                <span className="rank-no">{t.rank}</span>
+                <span className="rank-no">{t.leaderboard_rank ?? t.rank}</span>
                 <TeamLogo logo={t.logo} name={t.name} size={40} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700 }}>{t.name}</div>
-                  <div className="text-2nd" style={{ fontSize: 12 }}>综合排名 #{t.rank}</div>
+                  <div className="text-2nd" style={{ fontSize: 12 }}>排名 {t.leaderboard_rank ?? t.rank}</div>
                 </div>
                 {isFav && (
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700, color: 'var(--primary-deep)' }}>

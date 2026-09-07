@@ -211,16 +211,16 @@ function RecentResults({ teamId, history }) {
                   <span className="text-2nd" style={{ fontSize: 12, minWidth: 96 }}>
                     {String(m.match_date).replace('T', ' ').slice(0, 16)}
                   </span>
-                  <span style={{ flex: 1, minWidth: 0 }}>
-                    {m.opponent_logo ? (
-                      <img src={mediaUrl(m.opponent_logo)} alt="" style={{ width: 16, height: 16, borderRadius: '50%', marginRight: 4, verticalAlign: 'middle', objectFit: 'contain' }} />
-                    ) : null}
+                  <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span
                       onClick={() => navigate(`/teams/${m.opponent_id}`)}
                       style={{ cursor: 'pointer', fontWeight: 600 }}
                     >
                       vs {m.opponent_name}
                     </span>
+                    {m.opponent_logo ? (
+                      <img src={mediaUrl(m.opponent_logo)} alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'contain', flexShrink: 0 }} />
+                    ) : null}
                   </span>
                   <span style={{ fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>
                     {win ? (
