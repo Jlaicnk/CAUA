@@ -5,6 +5,7 @@ import { ArrowLeftOutlined, TrophyOutlined, CalendarOutlined, InfoCircleOutlined
 import { getTournament, getMatches, getStandings } from '../api/tournaments'
 import BracketView from '../components/BracketView'
 import { roundDate, formatLabel } from '../utils/format'
+import { mediaUrl } from '../utils/mediaUrl'
 import SimulatorModal from '../components/SimulatorModal'
 
 const STAGE_META = {
@@ -98,7 +99,7 @@ export default function TournamentDetail() {
               }}
             >
               {t.icon ? (
-                <img src={t.icon} alt={t.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={mediaUrl(t.icon)} alt={t.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
                 <TrophyOutlined style={{ fontSize: 32, color: 'var(--primary)' }} />
               )}
@@ -209,7 +210,7 @@ function StatusList({ title, rows, tone, onClick }) {
                 }}
               >
                 {row.team.logo ? (
-                  <img src={row.team.logo} alt={row.team.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  <img src={mediaUrl(row.team.logo)} alt={row.team.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                 ) : (
                   <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary-deep)' }}>{row.team.name?.charAt(0)}</span>
                 )}

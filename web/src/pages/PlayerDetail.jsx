@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Skeleton, Tag } from 'antd'
 import { ArrowLeftOutlined } from '@ant-design/icons'
 import { getPlayer } from '../api/teams'
+import { mediaUrl } from '../utils/mediaUrl'
 import RadarChart from '../components/RadarChart'
 import { PLAYER_STAT_GROUPS } from '../utils/playerStats'
 
@@ -66,7 +67,7 @@ export default function PlayerDetail() {
               }}
             >
               {player.avatar ? (
-                <img src={player.avatar} alt={player.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={mediaUrl(player.avatar)} alt={player.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
                 <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface-2)', fontSize: 30, fontWeight: 800, color: 'var(--primary-deep)' }}>
                   {player.name?.charAt(0)}

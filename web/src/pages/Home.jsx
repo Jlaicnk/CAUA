@@ -6,6 +6,7 @@ import BannerCarousel from '../components/BannerCarousel'
 import { MatchCard, TeamLogo } from '../components/MatchCard'
 import { getHome } from '../api/home'
 import { getMatches } from '../api/tournaments'
+import { mediaUrl } from '../utils/mediaUrl'
 import { getTeams } from '../api/teams'
 import { formatDate } from '../utils/format'
 
@@ -201,7 +202,7 @@ export default function Home() {
               {feeds.map((feed) => (
                 <div key={feed.id} className="video-card" onClick={() => openVideo(feed)}>
                   <div className="video-cover">
-                    <img src={feed.cover} alt={feed.title} loading="lazy" />
+                    <img src={mediaUrl(feed.cover)} alt={feed.title} loading="lazy" />
                     <div className="video-play-badge">
                       <span>
                         <PlayCircleFilled />

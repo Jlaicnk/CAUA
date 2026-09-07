@@ -5,6 +5,7 @@ import { UserOutlined, LogoutOutlined, HeartOutlined, LoginOutlined, CameraOutli
 import { useAuth } from '../context/AuthContext'
 import { uploadAvatar } from '../api/auth'
 import { TeamLogo } from '../components/MatchCard'
+import { mediaUrl } from '../utils/mediaUrl'
 
 export default function Profile() {
   const { user, loading, logout, refreshProfile } = useAuth()
@@ -65,7 +66,7 @@ export default function Profile() {
           <div style={{ position: 'relative', width: 84, height: 84, margin: '0 auto' }}>
             <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: '#fff', padding: 3, border: '1px solid var(--border)', overflow: 'hidden' }}>
               {user.avatar ? (
-                <img src={user.avatar} alt="avatar" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                <img src={mediaUrl(user.avatar)} alt="avatar" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
               ) : (
                 <div style={{ width: '100%', height: '100%', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 800, color: 'var(--primary-deep)', background: 'var(--surface-2)' }}>
                   {user.username?.charAt(0)?.toUpperCase()}

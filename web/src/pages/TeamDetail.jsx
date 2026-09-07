@@ -5,6 +5,7 @@ import { ArrowLeftOutlined, PlayCircleFilled, PauseCircleFilled, RiseOutlined, F
 import { getTeam, getTeamHistory } from '../api/teams'
 import { TeamLogo } from '../components/MatchCard'
 import PointsLineChart from '../components/PointsLineChart'
+import { mediaUrl } from '../utils/mediaUrl'
 
 export default function TeamDetail() {
   const { id } = useParams()
@@ -126,7 +127,7 @@ export default function TeamDetail() {
               <div style={{ width: 64, height: 64, margin: '0 auto 12px', position: 'relative' }}>
                 <div className="logo-bubble" style={{ width: 64, height: 64, overflow: 'hidden' }}>
                   {p.avatar ? (
-                    <img src={p.avatar} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={mediaUrl(p.avatar)} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
                     <div className="init-badge">{p.name?.charAt(0)}</div>
                   )}
@@ -212,7 +213,7 @@ function RecentResults({ teamId, history }) {
                   </span>
                   <span style={{ flex: 1, minWidth: 0 }}>
                     {m.opponent_logo ? (
-                      <img src={m.opponent_logo} alt="" style={{ width: 16, height: 16, borderRadius: '50%', marginRight: 4, verticalAlign: 'middle', objectFit: 'contain' }} />
+                      <img src={mediaUrl(m.opponent_logo)} alt="" style={{ width: 16, height: 16, borderRadius: '50%', marginRight: 4, verticalAlign: 'middle', objectFit: 'contain' }} />
                     ) : null}
                     <span
                       onClick={() => navigate(`/teams/${m.opponent_id}`)}

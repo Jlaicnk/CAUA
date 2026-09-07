@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Carousel } from 'antd'
+import { mediaUrl } from '../utils/mediaUrl'
 
 export default function BannerCarousel({ banners }) {
   const ref = useRef(null)
@@ -25,7 +26,7 @@ export default function BannerCarousel({ banners }) {
       >
         {banners.map((b) => (
           <div key={b.id} className="banner-slide">
-            <img src={b.image} alt={b.title} />
+            <img src={mediaUrl(b.image)} alt={b.title} />
             {b.title && (
               <>
                 <div className="banner-slide-mask" />

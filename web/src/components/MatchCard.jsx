@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatDate } from '../utils/format'
+import { mediaUrl } from '../utils/mediaUrl'
 
 export function TeamLogo({ logo, name, size = 56, style }) {
   const [broken, setBroken] = useState(false)
@@ -9,7 +10,7 @@ export function TeamLogo({ logo, name, size = 56, style }) {
     <div className="logo-bubble" style={{ width: size, height: size, overflow: 'hidden', ...style }}>
       {!showInit ? (
         <img
-          src={logo}
+          src={mediaUrl(logo)}
           alt={name}
           style={{ width: '100%', height: '100%', objectFit: 'contain' }}
           onError={() => setBroken(true)}
