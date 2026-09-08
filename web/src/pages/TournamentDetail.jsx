@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { Skeleton, Tag, Button, Modal, App as AntApp } from 'antd'
 import { ArrowLeftOutlined, TrophyOutlined, CalendarOutlined, InfoCircleOutlined, ThunderboltOutlined, RiseOutlined, FallOutlined, TeamOutlined } from '@ant-design/icons'
-import { getTournament, getMatches, getStandings } from '../api/tournaments'
+import { getTournament, getMatches, getStandings, getTournamentBracket } from '../api/tournaments'
 import BracketView from '../components/BracketView'
+import KnockoutBracket from '../components/KnockoutBracket'
 import { roundDate, formatLabel } from '../utils/format'
 import { mediaUrl } from '../utils/mediaUrl'
 import SimulatorModal from '../components/SimulatorModal'
@@ -14,24 +15,26 @@ const STAGE_META = {
   finished: { text: '已结束', cls: 'tag-pill tag-pill-finished' },
 }
 
-const STATUS_COLOR = { advanced: 'var(--success)', alive: 'var(--secondary)', eliminated: 'var(--text-3rd)' }
+const STATUS_COLOR = { advanced: 'var(--success)', alive: 'var(--secondary)', eliminated: 'var(--text-3rd)', finished: 'var(--text-2nd)' }
 
 export default function TournamentDetail() {
   const { id } = useParams()
   const [t, setT] = useState(null)
   const [matches, setMatches] = useState([])
   const [standings, setStandings] = useState([])
+  const [bracket, setBracket] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showSim, setShowSim] = useState(false)
   const navigate = useNavigate()
 
   const load = () => {
     setLoading(true)
-    Promise.all([getTournament(id), getMatches(Number(id)), getStandings(id)])
-      .then(([tr, mr, sr]) => {
+    Promise.all([getTournament(id), getMatches(Number(id)), getStandings(id), getTournamentBracket(id)])
+      .then(([tr, mr, sr, br]) => {
         setT(tr.data)
         setMatches(mr.data)
         setStandings(sr.data?.standings || [])
+        setBracket(br.data)
       })
       .catch((e) => console.error(e))
       .finally(() => setLoading(false))
@@ -42,6 +45,7 @@ export default function TournamentDetail() {
   const rounds = useMemo(() => {
     const byRound = {}
     for (const m of matches) {
+      if (m.knockout) continue
       ;(byRound[m.round] = byRound[m.round] || []).push(m)
     }
     return Object.keys(byRound)
@@ -55,11 +59,14 @@ export default function TournamentDetail() {
   }, [matches, t])
 
   const groups = useMemo(() => {
+    if (t?.stage_status === 'finished') {
+      return { adv: [], elim: [], alive: [], finished: standings }
+    }
     const adv = standings.filter((s) => s.status === 'advanced')
     const elim = standings.filter((s) => s.status === 'eliminated')
     const alive = standings.filter((s) => s.status === 'alive')
-    return { adv, elim, alive }
-  }, [standings])
+    return { adv, elim, alive, finished: [] }
+  }, [standings, t])
 
   if (loading) {
     return (
@@ -74,6 +81,8 @@ export default function TournamentDetail() {
 
   const stMeta = STAGE_META[t.stage_status] || STAGE_META.not_started
   const interval = t.round_interval_days || 3
+  const hasKnockout = t.knockout_after_swiss
+  const bracketRounds = bracket?.rounds || []
 
   return (
     <div className="page" style={{ maxWidth: 1080 }}>
@@ -107,7 +116,14 @@ export default function TournamentDetail() {
             <div style={{ flex: 1, minWidth: 240 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <span style={{ fontSize: 24, fontWeight: 800 }}>{t.name}</span>
-                <Tag color="magenta" style={{ borderRadius: 6, marginInlineEnd: 0 }}>{formatLabel(t.format)}</Tag>
+                <Tag color="magenta" style={{ borderRadius: 6, marginInlineEnd: 0 }}>
+                  {hasKnockout ? '瑞士轮 + 淘汰赛' : formatLabel(t.format)}
+                </Tag>
+                {t.phase && t.phase !== 'swiss' && t.stage_status !== 'finished' && (
+                  <Tag color="cyan" style={{ borderRadius: 6, marginInlineEnd: 0 }}>
+                    {t.phase === 'knockout' ? '淘汰赛阶段' : ''}
+                  </Tag>
+                )}
                 <span className={stMeta.cls} style={{ gap: 6 }}>
                   {t.stage_status === 'ongoing' && <span className="dot-live" />}
                   {stMeta.text}
@@ -115,13 +131,17 @@ export default function TournamentDetail() {
               </div>
               <div className="text-2nd" style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 12, fontSize: 13, flexWrap: 'wrap' }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><CalendarOutlined /> {t.start_date} ~ {t.end_date}</span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  <RiseOutlined style={{ color: 'var(--success)' }} /> 晋级 {t.advanced_count || 0}/16
-                </span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  <FallOutlined style={{ color: 'var(--text-3rd)' }} /> 出局 {t.eliminated_count || 0}
-                </span>
-                {t.stage_status !== 'not_started' && (
+                {t.stage_status !== 'finished' && (
+                  <>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <RiseOutlined style={{ color: 'var(--success)' }} /> 晋级 {t.advanced_count || 0}/16
+                    </span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <FallOutlined style={{ color: 'var(--text-3rd)' }} /> 出局 {t.eliminated_count || 0}
+                    </span>
+                  </>
+                )}
+                {t.stage_status !== 'not_started' && t.stage_status !== 'finished' && (
                   <span>当前第 {t.current_round} 轮</span>
                 )}
               </div>
@@ -154,16 +174,33 @@ export default function TournamentDetail() {
         <BracketView rounds={rounds} />
       )}
 
+      {/* knockout bracket */}
+      {hasKnockout && (
+        <>
+          <div className="section-head" style={{ marginTop: 26 }}>
+            <h2 className="section-title">淘汰赛对阵图</h2>
+            <span className="text-2nd" style={{ fontSize: 13 }}>
+              {bracketRounds.length ? `${bracketRounds.length} 轮` : '等待瑞士轮结束'}
+            </span>
+          </div>
+          <KnockoutBracket rounds={bracketRounds} phase={t.phase} />
+        </>
+      )}
+
       {/* standings lists */}
       <div className="section-head" style={{ marginTop: 26 }}>
-        <h2 className="section-title">队伍状态</h2>
+        <h2 className="section-title">{t.stage_status === 'finished' ? '最终排行榜' : '队伍状态'}</h2>
         <span className="text-2nd" style={{ fontSize: 13 }}>点队伍查看详情</span>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
-        <StatusList title={`🏆 已晋级 (${groups.adv.length})`} rows={groups.adv} tone="success" onClick={(teamId) => navigate(`/teams/${teamId}`)} />
-        <StatusList title={`⚡ 存活中 (${groups.alive.length})`} rows={groups.alive} tone="info" onClick={(teamId) => navigate(`/teams/${teamId}`)} />
-        <StatusList title={`💀 已出局 (${groups.elim.length})`} rows={groups.elim} tone="muted" onClick={(teamId) => navigate(`/teams/${teamId}`)} />
-      </div>
+      {t.stage_status === 'finished' ? (
+        <FinalRankings rows={groups.finished} onClick={(teamId) => navigate(`/teams/${teamId}`)} />
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
+          <StatusList title={`🏆 已晋级 (${groups.adv.length})`} rows={groups.adv} tone="success" onClick={(teamId) => navigate(`/teams/${teamId}`)} />
+          <StatusList title={`⚡ 存活中 (${groups.alive.length})`} rows={groups.alive} tone="info" onClick={(teamId) => navigate(`/teams/${teamId}`)} />
+          <StatusList title={`💀 已出局 (${groups.elim.length})`} rows={groups.elim} tone="muted" onClick={(teamId) => navigate(`/teams/${teamId}`)} />
+        </div>
+      )}
 
       <SimulatorModal
         open={showSim}
@@ -226,6 +263,64 @@ function StatusList({ title, rows, tone, onClick }) {
           ))
         )}
       </div>
+    </div>
+  )
+}
+
+const MEDAL_COLOR = { 1: '#e8a000', 2: '#9aa7b3', 3: '#cd7f4c', 4: '#8a97a3' }
+const MEDAL_LABEL = { 1: '冠军', 2: '亚军', 3: '季军', 4: '殿军' }
+
+function FinalRankings({ rows, onClick }) {
+  if (!rows || rows.length === 0) {
+    return <div className="page-empty">暂无排名数据</div>
+  }
+  const sorted = [...rows].sort((a, b) => (a.rank ?? 999) - (b.rank ?? 999))
+  return (
+    <div className="panel" style={{ padding: 8 }}>
+      {sorted.map((row) => {
+        const r = row.rank
+        const medal = r <= 3
+        return (
+          <div
+            key={row.team.id}
+            onClick={() => onClick(row.team.id)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 12, padding: '9px 14px',
+              borderRadius: 10, cursor: 'pointer', transition: 'background 0.15s',
+              background: r === 1 ? 'var(--accent-soft)' : r <= 3 ? 'var(--primary-soft)' : 'transparent',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-2)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = r === 1 ? 'var(--accent-soft)' : r <= 3 ? 'var(--primary-soft)' : 'transparent' }}
+          >
+            <span style={{ width: 40, fontWeight: 800, fontSize: 15, color: MEDAL_COLOR[r] || 'var(--text-2nd)', flexShrink: 0 }}>
+              {r}
+            </span>
+            <div
+              style={{
+                width: 28, height: 28, borderRadius: '50%', overflow: 'hidden', background: 'var(--surface-2)',
+                border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}
+            >
+              {row.team.logo ? (
+                <img src={mediaUrl(row.team.logo)} alt={row.team.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              ) : (
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary-deep)' }}>{row.team.name?.charAt(0)}</span>
+              )}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {row.team.name}
+              </div>
+              <div className="text-2nd" style={{ fontSize: 11 }}>
+                战绩 {row.record} · {row.played} 场
+              </div>
+            </div>
+            {medal && (
+              <span style={{ fontWeight: 800, fontSize: 13, color: MEDAL_COLOR[r] }}>{MEDAL_LABEL[r]}</span>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }

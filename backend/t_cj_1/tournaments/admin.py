@@ -18,9 +18,9 @@ class MatchInline(admin.TabularInline):
     model = Match
     extra = 0
     autocomplete_fields = ["home_team", "away_team"]
-    fields = ["round", "home_team", "away_team", "home_score", "away_score", "match_date", "status"]
+    fields = ["knockout", "round", "home_team", "away_team", "home_score", "away_score", "match_date", "status"]
     readonly_fields = ["status"]
-    ordering = ["round", "match_date"]
+    ordering = ["knockout", "round", "match_date"]
 
     def save_model(self, request, obj, form, change):
         if obj.home_score is not None and obj.away_score is not None and obj.home_score == obj.away_score:
@@ -38,12 +38,12 @@ class MatchInline(admin.TabularInline):
 @admin.register(Tournament)
 class TournamentAdmin(admin.ModelAdmin):
     list_display = [
-        "name", "format", "stage_status", "current_round", "adv_count", "start_date", "end_date", "team_count",
+        "name", "format", "phase", "stage_status", "current_round", "adv_count", "start_date", "end_date", "team_count",
     ]
-    list_filter = ["format", "stage_status"]
+    list_filter = ["format", "stage_status", "phase", "knockout_after_swiss"]
     search_fields = ["name"]
     inlines = [TournamentTeamInline, MatchInline]
-    actions = ["start_tournament", "advance_round", "reset_tournament"]
+    actions = ["start_tournament", "advance_round", "generate_knockout", "reset_tournament"]
     readonly_fields = ["stage_status", "current_round", "rounds"]
 
     @admin.display(description="晋级/淘汰")
@@ -73,6 +73,22 @@ class TournamentAdmin(admin.ModelAdmin):
                 self.message_user(request, f"「{t.name}」{res['message']}", messages.SUCCESS)
             except ValidationError as e:
                 self.message_user(request, f"「{t.name}」{e}", messages.ERROR)
+            except Exception as e:
+                self.message_user(request, f"「{t.name}」失败：{e}", messages.ERROR)
+
+    @admin.action(description="Ⓚ 生成淘汰赛阶段（瑞士轮结束且勾选后接淘汰赛时）")
+    def generate_knockout(self, request, queryset):
+        for t in queryset:
+            try:
+                if not t.knockout_after_swiss:
+                    self.message_user(request, f"「{t.name}」未勾选「瑞士轮后接淘汰赛」，跳过", messages.WARNING)
+                    continue
+                if t.stage_status != "ongoing" or t.phase != "swiss":
+                    self.message_user(request, f"「{t.name}」当前不在瑞士轮进行中，跳过", messages.WARNING)
+                    continue
+                from . import knockout
+                knockout.seed_knockout(t)
+                self.message_user(request, f"「{t.name}」已生成淘汰赛 16 强", messages.SUCCESS)
             except Exception as e:
                 self.message_user(request, f"「{t.name}」失败：{e}", messages.ERROR)
 

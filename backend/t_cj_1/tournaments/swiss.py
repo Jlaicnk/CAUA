@@ -167,8 +167,9 @@ def start_tournament(tournament):
         wins=0, losses=0, status=ALIVE, rank=None
     )
     tournament.stage_status = "ongoing"
+    tournament.phase = "swiss"
     tournament.current_round = 1
-    tournament.save(update_fields=["stage_status", "current_round"])
+    tournament.save(update_fields=["stage_status", "phase", "current_round"])
     generate_round(tournament, 1)
 
 
@@ -183,6 +184,9 @@ def settle_and_advance(tournament):
     cur = tournament.current_round
     if tournament.stage_status == "finished":
         raise ValidationError("赛事已结束")
+    if tournament.phase == "knockout":
+        from . import knockout
+        return knockout.settle_knockout_round(tournament)
     round_matches = list(Match.objects.filter(tournament=tournament, round=cur).order_by("id"))
 
     # Apply results for matches that have scores and are not finished yet.
@@ -200,8 +204,14 @@ def settle_and_advance(tournament):
         raise ValidationError(f"第 {cur} 轮尚未生成对阵")
 
     if is_over(tournament):
+        # swiss finished
+        if tournament.knockout_after_swiss:
+            from . import knockout
+            knockout.seed_knockout(tournament)
+            return {"action": "knockout", "message": "瑞士轮结束，已生成淘汰赛 16 强对阵（第一轮 1-9/2-10…）"}
         tournament.stage_status = "finished"
-        tournament.save(update_fields=["stage_status"])
+        tournament.phase = "finished"
+        tournament.save(update_fields=["stage_status", "phase"])
         return {"action": "finished", "message": f"第 {cur} 轮结束，赛事完成（16 强已决出）"}
 
     next_no = cur + 1
@@ -221,5 +231,6 @@ def reset_tournament(tournament):
         wins=0, losses=0, status=ALIVE, rank=None
     )
     tournament.stage_status = "not_started"
+    tournament.phase = "swiss"
     tournament.current_round = 0
-    tournament.save(update_fields=["stage_status", "current_round"])
+    tournament.save(update_fields=["stage_status", "phase", "current_round"])

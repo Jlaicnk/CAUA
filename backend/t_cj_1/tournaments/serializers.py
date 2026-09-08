@@ -19,7 +19,7 @@ class TournamentTeamSerializer(serializers.ModelSerializer):
 class TournamentListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tournament
-        fields = ["id", "name", "icon", "format", "rounds", "stage_status", "current_round", "start_date", "end_date"]
+        fields = ["id", "name", "icon", "format", "knockout_after_swiss", "phase", "rounds", "stage_status", "current_round", "start_date", "end_date"]
 
 
 class TournamentDetailSerializer(serializers.ModelSerializer):
@@ -31,7 +31,7 @@ class TournamentDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tournament
         fields = [
-            "id", "name", "icon", "description", "rules", "format", "rounds",
+            "id", "name", "icon", "description", "rules", "format", "knockout_after_swiss", "phase", "rounds",
             "stage_status", "current_round", "round_interval_days",
             "start_date", "end_date", "teams",
             "advanced_count", "eliminated_count", "alive_count",
@@ -78,7 +78,7 @@ class MatchListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Match
         fields = [
-            "id", "round", "tournament", "tournament_name",
+            "id", "round", "knockout", "tournament", "tournament_name",
             "home_team", "away_team",
             "home_score", "away_score", "match_date", "status",
         ]
@@ -92,7 +92,7 @@ class MatchDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Match
         fields = [
-            "id", "round", "tournament", "tournament_name",
+            "id", "round", "knockout", "tournament", "tournament_name",
             "home_team", "away_team",
             "home_score", "away_score", "match_date", "status",
         ]

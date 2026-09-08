@@ -96,6 +96,7 @@ for t in tournament_objs:
     t.format = "swiss"
     t.rounds = 5
     t.round_interval_days = 3
+    t.knockout_after_swiss = (t.name == "动漫世界杯")
     t.save()
 
 print("  tournaments ready:", len(tournament_objs))

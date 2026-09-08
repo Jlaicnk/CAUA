@@ -92,7 +92,11 @@ class StandingsView(RetrieveAPIView):
 
     def retrieve(self, request, *args, **kwargs):
         tournament = self.get_object()
-        ranked = build_standings_rows(tournament)
+        if tournament.stage_status == "finished":
+            # final 1..32 ranking (rank stored on TournamentTeam.rank)
+            ranked = self._final_rankings(tournament, request)
+        else:
+            ranked = build_standings_rows(tournament)
         data = {
             "tournament_id": tournament.id,
             "tournament_name": tournament.name,
@@ -100,10 +104,30 @@ class StandingsView(RetrieveAPIView):
             "rounds": tournament.rounds,
             "current_round": tournament.current_round,
             "stage_status": tournament.stage_status,
+            "phase": tournament.phase,
             "standings": ranked,
         }
         serializer = StandingsSerializer(data, context={"request": request})
         return Response(serializer.data)
+
+    def _final_rankings(self, tournament, request):
+        tts = list(tournament.tournament_teams.select_related("team"))
+        tts.sort(key=lambda tt: (tt.rank if tt.rank is not None else 999))
+        rows = []
+        for idx, tt in enumerate(tts, start=1):
+            rows.append({
+                "rank": tt.rank or idx,
+                "team": tt.team,
+                "played": tt.wins + tt.losses,
+                "wins": tt.wins,
+                "losses": tt.losses,
+                "points": tt.wins,
+                "buchholz": 0,
+                "goal_diff": 0,
+                "status": "finished",
+                "record": f"{tt.wins}-{tt.losses}",
+            })
+        return rows
 
 
 class MatchViewSet(viewsets.ReadOnlyModelViewSet):
@@ -166,3 +190,42 @@ class MatchHistoryView(RetrieveAPIView):
             "head_to_head": rows,
         }
         return Response(data)
+
+
+class TournamentBracketView(RetrieveAPIView):
+    """淘汰赛阶段 bracket（按轮次返回对阵与结果）。"""
+    queryset = Tournament.objects.all()
+
+    def retrieve(self, request, *args, **kwargs):
+        tournament = self.get_object()
+        ms = list(
+            Match.objects.filter(tournament=tournament, knockout=True)
+            .select_related("home_team", "away_team")
+            .order_by("round", "id")
+        )
+        by_round = {}
+        for m in ms:
+            by_round.setdefault(m.round, []).append(m)
+
+        round_names = {
+            1: "1/8 决赛",
+            2: "1/4 决赛",
+            3: "半决赛",
+            4: "决赛 · 季军赛",
+        }
+        rounds = []
+        for r in sorted(by_round.keys()):
+            rows = []
+            for m in by_round[r]:
+                rows.append({
+                    "match_id": m.id,
+                    "round": m.round,
+                    "status": m.status,
+                    "home_team": TeamListSerializer(m.home_team, context={"request": request}).data,
+                    "away_team": TeamListSerializer(m.away_team, context={"request": request}).data,
+                    "home_score": m.home_score,
+                    "away_score": m.away_score,
+                })
+            rounds.append({"round": r, "name": round_names.get(r, f"第 {r} 轮"), "matches": rows})
+
+        return Response({"tournament_id": tournament.id, "phase": tournament.phase, "rounds": rounds})

@@ -12,11 +12,18 @@ class Tournament(models.Model):
         ("ongoing", "进行中"),
         ("finished", "已结束"),
     ]
+    PHASE_CHOICES = [
+        ("swiss", "瑞士轮"),
+        ("knockout", "淘汰赛"),
+        ("finished", "已结束"),
+    ]
     name = models.CharField(max_length=200)
     icon = models.ImageField(upload_to="tournament_icons/", blank=True, default="")
     description = models.TextField(blank=True, default="")
     rules = models.TextField(blank=True, default="")
     format = models.CharField(max_length=20, choices=FORMAT_CHOICES, default="swiss", verbose_name="赛制")
+    knockout_after_swiss = models.BooleanField(default=False, verbose_name="瑞士轮后接单败淘汰赛")
+    phase = models.CharField(max_length=20, choices=PHASE_CHOICES, default="swiss", verbose_name="当前阶段")
     rounds = models.PositiveIntegerField(null=True, blank=True, verbose_name="总轮数上限")
     stage_status = models.CharField(max_length=20, choices=STAGE_CHOICES, default="not_started", verbose_name="赛事状态")
     current_round = models.PositiveIntegerField(default=0, verbose_name="当前轮次")
@@ -72,6 +79,7 @@ class Match(models.Model):
     match_date = models.DateTimeField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="scheduled")
     round = models.PositiveIntegerField(default=1, verbose_name="轮次")
+    knockout = models.BooleanField(default=False, verbose_name="淘汰赛阶段")
     points_settled = models.BooleanField(default=False, verbose_name="积分已结算")
 
     class Meta:
