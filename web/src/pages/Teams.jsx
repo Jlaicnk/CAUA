@@ -6,9 +6,9 @@ import { getTeams } from '../api/teams'
 import { TeamLogo } from '../components/MatchCard'
 
 const RANK_STYLE = {
-  1: { name: '冠军', cls: 'first' },
-  2: { name: '亚军', cls: 'second' },
-  3: { name: '季军', cls: 'third' },
+  1: { name: '第一', cls: 'first' },
+  2: { name: '第二', cls: 'second' },
+  3: { name: '第三', cls: 'third' },
 }
 
 function PodiumCard({ team, pos }) {
@@ -24,7 +24,6 @@ function PodiumCard({ team, pos }) {
       <div className={`podium-line ${meta.cls}`} />
       {rank === 1 && <span className="podium-crown"><CrownFilled style={{ color: '#f5b301' }} /></span>}
       <span className={`podium-rank ${meta.cls}`}>
-        {rank === 1 ? '👑 ' : ''}
         {meta.name}
       </span>
       <div style={{ display: 'flex', justifyContent: 'center', margin: '10px 0 14px' }}>

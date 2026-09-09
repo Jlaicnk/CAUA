@@ -1,17 +1,189 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { Skeleton, Tag } from 'antd'
-import { ArrowLeftOutlined } from '@ant-design/icons'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import { Skeleton } from 'antd'
+import {
+  ArrowLeftOutlined,
+  TeamOutlined,
+  RightOutlined,
+  TrophyOutlined,
+  ThunderboltOutlined,
+  AimOutlined,
+} from '@ant-design/icons'
 import { getPlayer } from '../api/teams'
 import { mediaUrl } from '../utils/mediaUrl'
 import RadarChart from '../components/RadarChart'
-import { PLAYER_STAT_GROUPS } from '../utils/playerStats'
+import HonorWall from '../components/HonorWall'
+import { DIMENSIONS, PLAYER_STAT_GROUPS } from '../utils/playerStats'
+
+const PLAYER_TIERS = [
+  { min: 85, color: '#e8a000', label: '顶级' },
+  { min: 75, color: '#e23d7a', label: '优秀' },
+  { min: 65, color: '#3f8fd6', label: '主力' },
+  { min: 0, color: '#8f8b99', label: '潜力' },
+]
+
+const FIVE_SCALE_KEYS = ['weak_foot_usage', 'weak_foot_accuracy', 'condition', 'injury_resistance']
+
+function tierOf(overall) {
+  if (overall == null) return PLAYER_TIERS[PLAYER_TIERS.length - 1]
+  return PLAYER_TIERS.find((t) => overall >= t.min) || PLAYER_TIERS[PLAYER_TIERS.length - 1]
+}
+
+function fillGradient(pct) {
+  if (pct >= 70) return 'linear-gradient(90deg, #ff8fae, #f45b8d)'
+  if (pct >= 45) return 'linear-gradient(90deg, #9bc4ef, #369ed8)'
+  return 'linear-gradient(90deg, #d9d4df, #b8b2c4)'
+}
+
+function PlayerHero({ player }) {
+  const navigate = useNavigate()
+  const tier = tierOf(player.overall)
+  const [avatarBroken, setAvatarBroken] = useState(false)
+  const showAvatar = player.avatar && !avatarBroken
+
+  return (
+    <div className="player-hero">
+      {player.number != null && <span className="player-watermark">#{player.number}</span>}
+      <div className="player-hero-inner">
+        <div className="portrait-zone">
+          <div
+            className="portrait-ring"
+            style={{ background: `linear-gradient(145deg, ${tier.color}, #ffd8e6 52%, ${tier.color})` }}
+          >
+            <div className="portrait-inner">
+              {showAvatar ? (
+                <img src={mediaUrl(player.avatar)} alt={player.name} onError={() => setAvatarBroken(true)} />
+              ) : (
+                <span className="portrait-init">{player.name?.charAt(0) || '?'}</span>
+              )}
+            </div>
+          </div>
+          <span className="tier-badge" style={{ background: tier.color }}>
+            {tier.label}球员
+          </span>
+        </div>
+
+        <div className="player-identity">
+          <div className="player-kicker" style={{ color: tier.color }}>
+            <span className="player-kicker-dot" style={{ background: tier.color }} />
+            角色档案
+          </div>
+          <h1 className="player-name">{player.name}</h1>
+
+          <div className="player-meta">
+            {player.number != null && <span className="player-chip player-chip-number">号码 #{player.number}</span>}
+            <span className="player-chip player-chip-pos">{player.position}</span>
+            {player.team && (
+              <button type="button" className="player-chip player-chip-team" onClick={() => navigate(`/teams/${player.team}`)}>
+                <TeamOutlined /> {player.team_name} <RightOutlined style={{ fontSize: 10 }} />
+              </button>
+            )}
+          </div>
+
+          {player.bio && <p className="player-bio">{player.bio}</p>}
+        </div>
+
+        <div className="ovr-zone">
+          <div
+            className="ovr-medal"
+            style={{ background: `linear-gradient(150deg, ${tier.color}, #ff8fae)`, boxShadow: `0 12px 28px ${tier.color}44` }}
+          >
+            <span>OVR</span>
+            <b>{player.overall ?? '—'}</b>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function StatRow({ player, item }) {
+  const key = item.key
+  const raw = player[key] ?? 0
+  const isFive = FIVE_SCALE_KEYS.includes(key)
+  const max = isFive ? 5 : 100
+  const pct = Math.max(0, Math.min(100, (raw / max) * 100))
+
+  return (
+    <div className="stat-row">
+      <span className="stat-label" title={item.label}>
+        {item.label}
+      </span>
+      <span className="stat-track">
+        <span className="stat-fill" style={{ width: `${pct}%`, background: fillGradient(pct) }} />
+      </span>
+      <b className={`stat-value ${pct >= 70 ? 'high' : pct >= 45 ? 'mid' : ''}`}>
+        {raw}
+        {isFive ? '/5' : ''}
+      </b>
+    </div>
+  )
+}
+
+function AbilitySummary({ player }) {
+  const dims = DIMENSIONS.map((d) => ({ ...d, value: player[d.key] ?? 0 }))
+  const best = dims.reduce((a, b) => (b.value > a.value ? b : a), dims[0])
+
+  return (
+    <div className="panel radar-panel">
+      <div className="ability-section-title">
+        <span className="ability-section-icon">
+          <ThunderboltOutlined />
+        </span>
+        六维总览
+      </div>
+      <div className="radar-holder">
+        <RadarChart values={dims.reduce((acc, d) => ({ ...acc, [d.key]: d.value }), {})} size={300} />
+      </div>
+      <div className="hex-list">
+        {dims.map((d) => (
+          <div className="hex-row" key={d.key}>
+            <span className="hex-label">{d.label}</span>
+            <span className="hex-track">
+              <span
+                className="hex-fill"
+                style={{ width: `${d.value}%`, background: fillGradient(d.value) }}
+              />
+            </span>
+            <b className={`hex-value ${d.value >= 70 ? 'high' : ''}`}>{d.value}</b>
+          </div>
+        ))}
+      </div>
+      <div className="ability-best">
+        <TrophyOutlined /> 最强维度：{best.label}
+        <b>{best.value}</b>
+      </div>
+    </div>
+  )
+}
+
+function AbilityDetail({ player }) {
+  return (
+    <div className="ability-cards">
+      {PLAYER_STAT_GROUPS.map((group) => (
+        <div className="ability-card" key={group.name}>
+          <div className="ability-card-head">
+            <span className="ability-card-icon">
+              <AimOutlined />
+            </span>
+            <span>{group.name}</span>
+            <em>{group.items.length} 项</em>
+          </div>
+          <div className="stat-list">
+            {group.items.map((item) => (
+              <StatRow key={item.key} player={player} item={item} />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 export default function PlayerDetail() {
   const { id } = useParams()
   const [player, setPlayer] = useState(null)
   const [loading, setLoading] = useState(true)
-  const navigate = useNavigate()
 
   useEffect(() => {
     setLoading(true)
@@ -23,7 +195,7 @@ export default function PlayerDetail() {
 
   if (loading) {
     return (
-      <div className="page">
+      <div className="page detail-page" style={{ maxWidth: 1080 }}>
         <Skeleton active paragraph={{ rows: 10 }} />
       </div>
     )
@@ -32,138 +204,41 @@ export default function PlayerDetail() {
     return <div className="page page-empty">队员不存在或加载失败</div>
   }
 
-  const radarValues = {
-    stat_shooting: player.stat_shooting ?? 0,
-    stat_passing: player.stat_passing ?? 0,
-    stat_dribble: player.stat_dribble ?? 0,
-    stat_speed: player.stat_speed ?? 0,
-    stat_power: player.stat_power ?? 0,
-    stat_defense: player.stat_defense ?? 0,
-  }
+  const backTo = player.team ? `/teams/${player.team}` : '/teams'
 
   return (
-    <div className="page" style={{ maxWidth: 820 }}>
-      <span
-        onClick={() => navigate(-1)}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--text-2nd)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-      >
-        <ArrowLeftOutlined /> 返回
-      </span>
+    <div className="page detail-page" style={{ maxWidth: 1080 }}>
+      <div className="detail-nav">
+        <Link to={backTo} className="back-link">
+          <ArrowLeftOutlined /> 返回队伍档案
+        </Link>
+        <span className="detail-nav-note">CAUA · 角色档案</span>
+      </div>
 
-      <div className="panel" style={{ marginTop: 14, padding: 0, overflow: 'hidden' }}>
-        <div style={{ height: 90, background: 'linear-gradient(180deg, #fff0f5, #ffffff)' }} />
-        <div style={{ padding: '0 32px 32px', textAlign: 'center', marginTop: -56 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
-            <div
-              style={{
-                width: 112,
-                height: 112,
-                borderRadius: '50%',
-                background: '#fff',
-                border: '4px solid #fff',
-                boxShadow: '0 4px 16px rgba(20,22,34,0.1)',
-                overflow: 'hidden',
-                flexShrink: 0,
-              }}
-            >
-              {player.avatar ? (
-                <img src={mediaUrl(player.avatar)} alt={player.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              ) : (
-                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface-2)', fontSize: 30, fontWeight: 800, color: 'var(--primary-deep)' }}>
-                  {player.name?.charAt(0)}
-                </div>
-              )}
-            </div>
-            {/* OVR 徽标 */}
-            <div
-              style={{
-                width: 84,
-                height: 84,
-                borderRadius: 18,
-                background: 'linear-gradient(135deg, var(--primary), #ff9eb8)',
-                color: '#fff',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 6px 18px rgba(244,91,141,0.35)',
-                flexShrink: 0,
-              }}
-            >
-              <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.9 }}>综合评分</span>
-              <span style={{ fontSize: 30, fontWeight: 800, lineHeight: 1.1 }}>{player.overall ?? 0}</span>
-            </div>
-          </div>
+      <PlayerHero player={player} />
 
-          <div style={{ fontSize: 26, fontWeight: 800, marginTop: 16 }}>{player.name}</div>
-          {player.team_name && (
-            <span
-              onClick={() => navigate(`/teams/${player.team}`)}
-              style={{ display: 'inline-block', marginTop: 6, color: 'var(--text-2nd)', fontSize: 14, cursor: 'pointer', fontWeight: 600 }}
-            >
-              {player.team_name} →
+      {player.honors?.length > 0 && (
+        <>
+          <div className="section-head">
+            <h2 className="section-title">荣誉墙</h2>
+            <span className="text-2nd" style={{ fontSize: 13 }}>
+              {player.honors.length} 项赛事荣誉
             </span>
-          )}
-
-          <div style={{ margin: '14px 0 10px', display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Tag style={{ borderRadius: 6, marginInlineEnd: 0 }}>号码 {player.number}</Tag>
-            <Tag color="magenta" style={{ borderRadius: 6, marginInlineEnd: 0 }}>位置 {player.position}</Tag>
           </div>
+          <HonorWall honors={player.honors} />
+        </>
+      )}
 
-          {player.bio && (
-            <div
-              style={{
-                marginTop: 8,
-                textAlign: 'left',
-                background: 'var(--surface-2)',
-                borderRadius: 14,
-                padding: 16,
-                fontSize: 14,
-                lineHeight: 1.8,
-                color: 'var(--text)',
-              }}
-            >
-              {player.bio}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* 能力区：雷达图 + 小项明细 */}
-      <div className="section-head" style={{ marginTop: 24 }}>
+      <div className="section-head">
         <h2 className="section-title">能力数值</h2>
+        <span className="text-2nd" style={{ fontSize: 13 }}>
+          综合 OVR {player.overall} · 六维由细分能力加权合成
+        </span>
       </div>
-      <div className="panel" style={{ padding: 24 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 28, alignItems: 'start' }}>
-          <div style={{ textAlign: 'center' }}>
-            <RadarChart values={radarValues} size={300} />
-            <div className="text-2nd" style={{ fontSize: 12, marginTop: 4 }}>六维能力 · 六边形</div>
-          </div>
-          <div>
-            {PLAYER_STAT_GROUPS.map((group) => (
-              <div key={group.name} style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--primary-deep)', marginBottom: 6 }}>{group.name}</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '4px 12px' }}>
-                  {group.items.map((it) => (
-                    <div key={it.key} style={{ display: 'flex', alignItems: 'center', fontSize: 13, padding: '3px 0' }}>
-                      <span className="text-2nd" style={{ flex: 1 }}>{it.label}</span>
-                      <span
-                        style={{
-                          fontWeight: 700,
-                          color: group.name.includes('0-5')
-                            ? 'var(--secondary)'
-                            : player[it.key] >= 80 ? 'var(--primary-deep)' : player[it.key] >= 60 ? 'var(--text)' : 'var(--text-2nd)',
-                        }}
-                      >
-                        {player[it.key] ?? 0}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+
+      <div className="ability-layout">
+        <AbilitySummary player={player} />
+        <AbilityDetail player={player} />
       </div>
     </div>
   )

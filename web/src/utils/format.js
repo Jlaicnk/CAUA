@@ -7,31 +7,14 @@ export function formatDateRange(start, end) {
   return `${start} ~ ${end}`
 }
 
-export function statusText(status) {
-  switch (status) {
-    case 'ongoing':
-      return '⚽ 进行中'
-    case 'finished':
-      return '完场'
-    default:
-      return '即将开始'
-  }
-}
-
-export function statusPillClass(status) {
-  switch (status) {
-    case 'ongoing':
-      return 'pill-ongoing'
-    case 'finished':
-      return 'pill-finished'
-    default:
-      return 'pill-scheduled'
-  }
-}
-
 export const STATUS_ORDER = { ongoing: 0, scheduled: 1, finished: 2 }
 
-const FORMAT_LABEL = { swiss: '晋级瑞士轮', knockout: '淘汰赛', league: '循环赛' }
+const FORMAT_LABEL = {
+  swiss: '晋级瑞士轮',
+  knockout: '淘汰赛',
+  league: '循环赛',
+  double_elim: '双败淘汰',
+}
 export function formatLabel(fmt) {
   return FORMAT_LABEL[fmt] || fmt || ''
 }

@@ -2,13 +2,15 @@ from django.contrib import admin, messages
 from django.utils.html import format_html
 from django.core.exceptions import ValidationError
 from .models import Tournament, TournamentTeam, Match
-from . import swiss, round_robin
+from . import swiss, round_robin, double_elim
 
 
 def _engine(tournament):
     """Pick the progression engine for a tournament by its format."""
     if tournament.format == "league":
         return round_robin
+    if tournament.format == "double_elim":
+        return double_elim
     return swiss
 
 
@@ -16,8 +18,8 @@ class TournamentTeamInline(admin.TabularInline):
     model = TournamentTeam
     extra = 0
     autocomplete_fields = ["team"]
-    readonly_fields = ["wins", "losses", "status", "rank"]
-    fields = ["team", "wins", "losses", "status", "rank"]
+    readonly_fields = ["wins", "losses", "status", "rank", "elim_band"]
+    fields = ["team", "wins", "losses", "status", "rank", "elim_band"]
     can_delete = False
 
 
@@ -25,8 +27,8 @@ class MatchInline(admin.TabularInline):
     model = Match
     extra = 0
     autocomplete_fields = ["home_team", "away_team"]
-    fields = ["knockout", "round", "home_team", "away_team", "home_score", "away_score", "match_date", "status"]
-    readonly_fields = ["status"]
+    fields = ["knockout", "bracket_kind", "round", "home_team", "away_team", "home_score", "away_score", "match_date", "status"]
+    readonly_fields = ["status", "bracket_kind"]
     ordering = ["knockout", "round", "match_date"]
 
     def save_model(self, request, obj, form, change):

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Form, Input, Button, App as AntApp, Typography } from 'antd'
 import { UserOutlined, LockOutlined } from '@ant-design/icons'
 import { useAuth } from '../context/AuthContext'
+import { BallIcon } from '../components/BrandIcons'
 
 export default function Register() {
   const { register } = useAuth()
@@ -29,7 +30,9 @@ export default function Register() {
       <div style={{ width: '100%', maxWidth: 400 }}>
         <div className="panel" style={{ padding: 32 }}>
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
-            <div style={{ width: 52, height: 52, margin: '0 auto 12px', borderRadius: 16, background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26 }}>⚽</div>
+            <div className="brand-ball-mark">
+              <BallIcon size={28} />
+            </div>
             <div style={{ fontSize: 21, fontWeight: 800 }}>创建账号</div>
             <Typography.Text type="secondary" style={{ fontSize: 14 }}>加入 CAUA 赛事平台</Typography.Text>
           </div>

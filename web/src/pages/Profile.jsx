@@ -5,6 +5,7 @@ import { UserOutlined, LogoutOutlined, HeartOutlined, LoginOutlined, CameraOutli
 import { useAuth } from '../context/AuthContext'
 import { uploadAvatar } from '../api/auth'
 import { TeamLogo } from '../components/MatchCard'
+import { BallIcon } from '../components/BrandIcons'
 import { mediaUrl } from '../utils/mediaUrl'
 
 export default function Profile() {
@@ -40,7 +41,9 @@ export default function Profile() {
     return (
       <div className="page" style={{ maxWidth: 480 }}>
         <div className="panel" style={{ textAlign: 'center', padding: 44, marginTop: 40 }}>
-          <div style={{ fontSize: 54, marginBottom: 16 }}>⚽</div>
+          <div className="brand-ball-mark brand-ball-mark-lg">
+            <BallIcon size={42} />
+          </div>
           <div style={{ fontSize: 20, fontWeight: 800 }}>还没登录</div>
           <div className="text-2nd" style={{ margin: '10px 0 26px', lineHeight: 1.8 }}>
             登录后可选择主队、上传头像

@@ -4,6 +4,7 @@ import { SwapOutlined, UndoOutlined, ThunderboltFilled } from '@ant-design/icons
 import { getTournament } from '../api/tournaments'
 import { roundDate } from '../utils/format'
 import BracketView from './BracketView'
+import DoubleElimSimulator from './DoubleElimSimulator'
 import {
   ALIVE, ADVANCED, statusOf, randomScores, pairRound, addForbidden,
 } from '../utils/qualifier'
@@ -124,6 +125,10 @@ export default function SimulatorModal({ open, tournament, onClose }) {
   const teamName = (id) => teamPool.find((x) => x.team_id === id)?.team?.name || `#${id}`
 
   const currentRound = rounds.length ? rounds[rounds.length - 1] : null
+
+  if (tournament?.format === 'double_elim') {
+    return <DoubleElimSimulator open={open} tournament={tournament} onClose={onClose} />
+  }
 
   return (
     <Modal

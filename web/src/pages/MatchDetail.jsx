@@ -4,7 +4,8 @@ import { Skeleton, Tag, Empty, Button } from 'antd'
 import { ArrowLeftOutlined } from '@ant-design/icons'
 import { getMatch, getMatchHistory } from '../api/tournaments'
 import { TeamLogo } from '../components/MatchCard'
-import { formatDate, statusText, statusPillClass } from '../utils/format'
+import { formatDate } from '../utils/format'
+import StatusTag from '../components/StatusTag'
 
 export default function MatchDetail() {
   const { id } = useParams()
@@ -66,7 +67,7 @@ export default function MatchDetail() {
             {formatDate(match.match_date)}
           </div>
           <div style={{ marginTop: 8 }}>
-            <span className={statusPillClass(match.status)}>{statusText(match.status)}</span>
+            <StatusTag status={match.status} />
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 24 }}>

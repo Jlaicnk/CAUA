@@ -2,6 +2,7 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.generics import RetrieveAPIView
 from django.db.models import Q
+from django.db.models import Sum
 from .models import Tournament, Match
 from .serializers import (
     TournamentListSerializer,
@@ -112,6 +113,16 @@ class StandingsView(RetrieveAPIView):
 
     def _final_rankings(self, tournament, request):
         tts = list(tournament.tournament_teams.select_related("team"))
+        agg = (
+            PointsChange.objects.filter(
+                match__tournament=tournament,
+                team__in=[tt.team for tt in tts],
+                reason="match",
+            )
+            .values("team_id")
+            .annotate(total=Sum("amount"))
+        )
+        net_map = {row["team_id"]: row["total"] or 0 for row in agg}
         tts.sort(key=lambda tt: (tt.rank if tt.rank is not None else 999))
         rows = []
         for idx, tt in enumerate(tts, start=1):
@@ -126,6 +137,7 @@ class StandingsView(RetrieveAPIView):
                 "goal_diff": 0,
                 "status": "finished",
                 "record": f"{tt.wins}-{tt.losses}",
+                "net_points": net_map.get(tt.team_id, 0),
             })
         return rows
 
@@ -199,6 +211,8 @@ class TournamentBracketView(RetrieveAPIView):
 
     def retrieve(self, request, *args, **kwargs):
         tournament = self.get_object()
+        if tournament.format == "double_elim":
+            return self._double_elim(tournament, request)
         ms = list(
             Match.objects.filter(tournament=tournament, knockout=True)
             .select_related("home_team", "away_team")
@@ -230,6 +244,81 @@ class TournamentBracketView(RetrieveAPIView):
             rounds.append({"round": r, "name": round_names.get(r, f"第 {r} 轮"), "matches": rows})
 
         return Response({"tournament_id": tournament.id, "phase": tournament.phase, "rounds": rounds})
+
+    def _match_row(self, m, request):
+        return {
+            "match_id": m.id,
+            "round": m.round,
+            "status": m.status,
+            "bracket_kind": m.bracket_kind,
+            "home_team": TeamListSerializer(m.home_team, context={"request": request}).data,
+            "away_team": TeamListSerializer(m.away_team, context={"request": request}).data,
+            "home_score": m.home_score,
+            "away_score": m.away_score,
+        }
+
+    def _double_elim(self, tournament, request):
+        """Return dual-track bracket data for the double-elimination format."""
+        ms = list(
+            Match.objects.filter(tournament=tournament, knockout=True)
+            .select_related("home_team", "away_team")
+            .order_by("round", "id")
+        )
+
+        winners_by_round = {}
+        losers_by_round = {}
+        final_matches = []
+        for m in ms:
+            if m.bracket_kind == "winners":
+                winners_by_round.setdefault(m.round, []).append(m)
+            elif m.bracket_kind == "losers":
+                losers_by_round.setdefault(m.round, []).append(m)
+            elif m.bracket_kind == "final":
+                final_matches.append(m)
+
+        winner_labels = {
+            1: "胜者组 16 强",
+            2: "胜者组 8 强",
+            4: "胜者组 半决赛",
+            6: "胜者组 决赛",
+        }
+        loser_labels = {
+            2: "败者组 R1",
+            3: "败者组 R2",
+            4: "败者组 R3",
+            5: "败者组 R4",
+            6: "败者组 R5",
+            7: "败者组决赛",
+        }
+
+        def cols(grouped, labels):
+            out = []
+            for r in sorted(grouped):
+                out.append({
+                    "round": r,
+                    "name": labels.get(r, f"第 {r} 轮"),
+                    "matches": [self._match_row(m, request) for m in grouped[r]],
+                })
+            return out
+
+        final_col = None
+        if final_matches:
+            final_col = {
+                "round": 8,
+                "name": "总决赛",
+                "matches": [self._match_row(m, request) for m in final_matches],
+            }
+
+        return Response({
+            "tournament_id": tournament.id,
+            "format": tournament.format,
+            "phase": tournament.phase,
+            "current_round": tournament.current_round,
+            "stage_status": tournament.stage_status,
+            "winners": cols(winners_by_round, winner_labels),
+            "losers": cols(losers_by_round, loser_labels),
+            "final": final_col,
+        })
 
 
 class TournamentDayChangesView(RetrieveAPIView):

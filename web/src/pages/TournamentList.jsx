@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Card, Skeleton, Tag } from 'antd'
-import { RightOutlined } from '@ant-design/icons'
+import { RightOutlined, TrophyOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { getTournaments } from '../api/tournaments'
 import { mediaUrl } from '../utils/mediaUrl'
@@ -67,7 +67,7 @@ export default function TournamentList() {
                     {t.icon ? (
                       <img src={mediaUrl(t.icon)} alt={t.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
-                      <span style={{ fontSize: 24 }}>🏆</span>
+                      <TrophyOutlined style={{ fontSize: 26, color: 'var(--primary)' }} />
                     )}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>

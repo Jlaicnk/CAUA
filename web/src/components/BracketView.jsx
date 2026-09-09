@@ -116,7 +116,7 @@ function TerminalBox({ title, teams, kind, onOpen }) {
   )
 }
 
-export default function BracketView({ rounds }) {
+export default function BracketView({ rounds, currentRound = null, showLegend = false }) {
   const navigate = useNavigate()
   const onOpen = (id) => { if (id != null) navigate(`/teams/${id}`) }
   if (!rounds || rounds.length === 0) {
@@ -249,8 +249,34 @@ export default function BracketView({ rounds }) {
 
   return (
     <div className="swiss-board">
+      {showLegend && (
+        <div className="swiss-legend">
+          <div className="swiss-legend-items">
+            <span className="swiss-legend-item">
+              <i className="legend-dot legend-win" /> 胜方
+            </span>
+            <span className="swiss-legend-item">
+              <i className="legend-dot legend-dim" /> 负方 / 出局
+            </span>
+            <span className="swiss-legend-item legend-record">「1-0」= 带着 1 胜 0 负进入本轮</span>
+          </div>
+          <span className="swiss-legend-rule">3 胜晋级 · 3 负出局 · 同战绩优先配对</span>
+        </div>
+      )}
       <div className="swiss-board-row">
         {slots.map((slot, i) => {
+          const roundNo = slot.round
+          const roundComplete = slot.col?.matches?.every((m) => m.status === 'finished')
+          const stateCls =
+            currentRound != null && slot.col
+              ? roundNo < currentRound
+                ? ' is-past'
+                : roundNo === currentRound
+                  ? ' is-current'
+                  : ''
+              : roundComplete
+                ? ' is-past'
+                : ''
           if (slot.kind === 'round') {
             const inner = slot.hasContent ? (
               <>
@@ -264,7 +290,7 @@ export default function BracketView({ rounds }) {
               </>
             )
             return (
-              <div key={`r-${slot.round}`} className="swiss-col">
+              <div key={`r-${slot.round}`} className={`swiss-col${stateCls}`}>
                 {inner}
               </div>
             )
@@ -289,7 +315,7 @@ export default function BracketView({ rounds }) {
               </>
             )
             return (
-              <div key={`m-${slot.round}`} className="swiss-col">
+              <div key={`m-${slot.round}`} className={`swiss-col${stateCls}`}>
                 {inner}
               </div>
             )

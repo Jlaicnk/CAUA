@@ -1,6 +1,8 @@
 # CAUA - 二次元足球赛事平台
 
-一个融合二次元动漫角色与足球竞技的赛事查看平台，包含 Android 客户端、Web 前端和 Django 后端。
+一个融合二次元动漫角色与足球竞技的赛事查看平台，包含 Web 前端和 Django 后端。
+
+> Android 客户端**已停更**，仓库中相关内容仅作历史参考，不再维护。
 
 ---
 
@@ -40,7 +42,7 @@
 ```
 CAUA/
 ├── app/                              # Android 客户端
-│   └── src/main/
+│   └── src/main/                    # Android 已停更（历史参考）
 │       ├── java/com/example/t/
 │       │   ├── data/                 # 数据层
 │       │   │   ├── api/              # Retrofit 接口
@@ -69,7 +71,7 @@ CAUA/
 ├── web/                              # Web 前端 (React + Vite)
 │   └── src/
 │       ├── api/                      # axios 接口封装
-│       ├── components/               # 公共组件（含 BracketView 对阵图、SimulatorModal 模拟器、ErrorBoundary、LeagueSchedule 联赛对阵板、LeagueDayPanel 每日积分变动）
+│       ├── components/               # 公共组件（BracketView 瑞士轮对阵图、DoubleElimBracket 双败双轨图、KnockoutBracket 淘汰赛路径图、HonorWall 荣誉墙、SimulatorModal 本地推演、LeagueSchedule/LeagueDayPanel 联赛模块）
 │       ├── context/                  # 登录态管理
 │       ├── pages/                    # 页面
 │       ├── styles/                   # 全局样式
@@ -82,7 +84,7 @@ CAUA/
 │       ├── config/                   # Django 配置
 │       ├── accounts/                 # 用户模块
 │       ├── teams/                    # 队伍模块
-│       ├── tournaments/              # 赛事模块（swiss.py 晋级瑞士轮、round_robin.py 单循环联赛、knockout.py 淘汰赛）
+│       ├── tournaments/              # 赛事模块（swiss.py 晋级瑞士轮、round_robin.py 单循环联赛、knockout.py 单败淘汰赛、double_elim.py 双败淘汰，含队伍/队员荣誉模型）
 │       ├── home/                     # 首页模块
 │       ├── manage.py
 │       └── seed_data.py              # 种子数据脚本
@@ -205,10 +207,17 @@ python manage.py runserver 0.0.0.0:8000
 - 单败淘汰：胜者晋级、负者出局；每场继续结算积分
 - 决赛 + 季军赛结束后赛事完成，生成**最终排行榜**（前 4 名=冠军/亚军/季军/殿军；5~32 名按胜场→败场→积分→编号排序）
 
+**双败淘汰（`format` 选「双败淘汰」）**：
+- 需要恰好 **16 支参赛队**；开局按全局积分作种子
+- 胜者组/败者组按比赛日自动推进：D1 胜者组 16 强 → D2 胜者组 8 强 + 败者组 R1 → D3 败者组 R2 → D4 胜者组半决赛 + 败者组 R3 → D5 败者组 R4 → D6 胜者组决赛 + 败者组 R5 → D7 败者组决赛 → D8 总决赛，共 **30 场、最多 8 个比赛日**
+- 输一场掉入败者组、败者组再输一场出局；每场必须分胜负并逐场结算积分
+- 总决赛结束后生成 **1~16 完整名次**：冠军/亚军来自总决赛，3/4 名来自败者组淘汰顺序，5~16 名按「本次赛事净积分 → 胜场 → 种子号」段内排开，无并列
+- Web 赛事页提供双败「胜者组 + 败者组」双轨对阵图，并支持纯本地双败推演
+
 #### 10. 创建媒体目录
 
 ```bash
-mkdir media/banners media/covers media/logos media/avatars media/songs media/videos media/tournament_icons
+mkdir media/banners media/covers media/logos media/avatars media/songs media/videos media/tournament_icons media/honors
 ```
 
 #### 11. 上传媒体文件
@@ -224,10 +233,13 @@ mkdir media/banners media/covers media/logos media/avatars media/songs media/vid
 | 首页 | Banner 图片 | `banners/` |
 | 首页 | 视频封面 | `covers/` |
 | 首页 | 视频文件 | `videos/` |
+| 队伍/队员 | 荣誉墙（殿堂级荣誉专属图片） | `honors/` |
 
 ---
 
-## Android 客户端搭建
+## Android 客户端搭建（已停更）
+
+> 注意：本部分为历史内容，Android 客户端已停止维护与更新，以下步骤仅供回顾参考。
 
 ### 环境要求
 
@@ -377,11 +389,11 @@ npm run build
 | `/` | 首页 | Banner 轮播 + 今日焦点 + 近期赛事 + 视频流 + 队伍 Top5 |
 | `/schedule` | 赛程 | 按赛事筛选，按状态分组 |
 | `/tournaments` | 赛事列表 | 赛事状态标签 |
-| `/tournaments/:id` | 赛事详情 | 简介/规则 + 对阵图（瑞士轮/单循环按赛制切换）+ 淘汰赛对阵图（如启用）+ 队伍状态/最终排行榜 + 本地模拟推演；单循环赛事另含「今日队伍积分变动」 |
+| `/tournaments/:id` | 赛事详情 | 简介/规则 + 对阵图（瑞士轮/单循环/双败按赛制切换）+ 淘汰赛/双败对阵图 + 队伍状态/最终排行榜 + 本地模拟推演（瑞士轮与双败均支持）；单循环赛事另含「今日队伍积分变动」 |
 | `/matches/:id` | 比赛详情 | 两队/比分/积分变动 + 两队近期交手记录（最近5场，无则暂无） |
-| `/teams` | 队伍排行榜 | 前三名领奖台 + 完整排名（按积分） |
-| `/teams/:id` | 队伍详情 | 简介 + 积分榜排名 + 队歌播放 + 近期10场战绩（对手头像+积分折线图）+ 队员网格 |
-| `/players/:id` | 队员详情 | 角色档案卡 |
+| `/teams` | 队伍排行榜 | 前三名领奖台（第一/第二/第三）+ 完整排名（按积分） |
+| `/teams/:id` | 队伍详情 | 主视觉 + 荣誉墙 + 积分榜排名 + 队歌播放 + 近期10场战绩（对手头像+积分折线图）+ 队员网格 |
+| `/players/:id` | 队员详情 | 角色档案卡 + 荣誉墙 + 六维雷达与能力明细 |
 | `/profile` | 我的 | 头像上传 / 主队 / 登录注册入口 |
 | `/login` `/register` | 登录 / 注册 | |
 | `/favorite-team` | 选择主队 | |
@@ -423,14 +435,14 @@ Authorization: Bearer <access_token>
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | GET | `/api/teams/` | 队伍列表（按积分降序的排行榜，含 `leaderboard_rank` 积分榜名次） |
-| GET | `/api/teams/{id}/` | 队伍详情（含队员、积分、`leaderboard_rank` 积分榜名次） |
+| GET | `/api/teams/{id}/` | 队伍详情（含队员、`honors` 荣誉墙、积分、`leaderboard_rank` 积分榜名次） |
 | GET | `/api/teams/{id}/history/` | 队伍近期战绩（最近 10 场比赛结果 + 积分变动流水/折线数据） |
 
 #### 队员
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/api/players/{id}/` | 队员详情 |
+| GET | `/api/players/{id}/` | 队员详情（含六维能力与 `honors` 荣誉墙） |
 
 #### 赛事
 
@@ -438,7 +450,7 @@ Authorization: Bearer <access_token>
 |------|------|------|
 | GET | `/api/tournaments/` | 赛事列表 |
 | GET | `/api/tournaments/{id}/` | 赛事详情（含赛制 format、`phase` 当前阶段、`knockout_after_swiss` 是否后接淘汰赛、rounds、current_round、晋级/淘汰/存活计数） |
-| GET | `/api/tournaments/{id}/standings/` | 积分榜/队伍状态；赛事结束后返回最终 1~32 排行（前4=冠军/亚军/季军/殿军） |
+| GET | `/api/tournaments/{id}/standings/` | 积分榜/队伍状态；赛事结束后返回最终排行（含 `net_points` 本次赛事净积分；双败为 1~16，瑞士轮+淘汰赛为 1~32） |
 | GET | `/api/tournaments/{id}/bracket/` | 淘汰赛对阵图（各轮次对阵与结果） |
 | GET | `/api/tournaments/{id}/day-changes/` | 最新已完赛一轮的比赛 + 每队积分变动（联赛「今日队伍积分变动」数据源；无完赛场次则 `round: null`） |
 | GET | `/api/matches/` | 赛程列表 |
@@ -601,6 +613,24 @@ org.gradle.jvmargs=-Xmx1024m -Dfile.encoding=UTF-8
 
 Web 赛事详情页展示「单循环赛程」对阵板；下方「**今日队伍积分变动**」只显示最新已完赛一轮的 4 场比赛与每队 ±积分——打到第几轮就显示第几轮，全部结束后仍停留最后一轮。
 
+### Q13: 双败淘汰怎么跑 / 最终排名怎么排
+
+1. 在 Admin 新建赛事，赛制选「双败淘汰」（`format`），并添加恰好 **16 个**参赛队
+2. 「① 开始赛事」生成第 1 日（胜者组 8 场）；每场填写比分（无平局）并保存后点「② 推进」
+3. 系统按比赛日自动生成胜者组/败者组对阵：输一场掉败者组、再输一场出局；第 8 日总决赛结束后赛事自动完成
+4. 最终排名 1~16：冠军/亚军来自总决赛，3/4 名来自败者组淘汰顺序，5~16 名在同一名次段内按「本次赛事净积分 → 胜场 → 种子号」排序，无并列
+
+Web 赛事详情页用「胜者组 + 败者组」双轨对阵图展示进度，也可点「本地模拟推演」在浏览器里跑一版双败流程（不写库）。
+
+### Q14: 队伍/队员的荣誉墙怎么添加
+
+荣誉墙由后台**手动添加**，每条荣誉必须关联一个赛事：
+
+1. 进入 Django Admin 的「队伍」或「队员」编辑页，在「荣誉」内联区块点「添加另一条」
+2. 选择关联赛事、填写荣誉名称（自由命名，如「冠军」「最佳射手」）
+3. 等级选「殿堂级/金/银/铜」；殿堂级可上传专属图片（`media/honors/`），金银铜使用内置奖章样式
+4. 可选备注和排序（数字越小越靠前），保存后队伍/队员页面的「荣誉墙」会自动展示
+
 ---
 
 ## 技术栈
@@ -629,7 +659,7 @@ Web 赛事详情页展示「单循环赛程」对阵板；下方「**今日队�
 | Ant Design 5 | 组件库（白色主题 + 粉色强调） |
 | React Router 6 | 页面路由（懒加载） |
 | Axios | 网络请求（JWT 自动携带与刷新） |
-| 本地模拟器 | 纯前端复刻瑞士轮配对逻辑，可随机/手输比分推演到 16 强，不写库 |
+| 本地模拟器 | 纯前端复刻瑞士轮与 16 队双败推进逻辑，可随机/手输比分推演，不写库 |
 
 ### 后端 (Django)
 

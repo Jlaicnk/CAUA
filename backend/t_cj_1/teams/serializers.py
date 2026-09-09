@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Team, Player
+from tournaments.models import TeamHonor, PlayerHonor
 
 # 29 个能力小项字段名 (前25项0-100, 后4项0-5)
 PLAYER_STAT_FIELDS = [
@@ -26,15 +27,32 @@ class PlayerSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "avatar", "position", "number", "overall"]
 
 
+class TeamHonorSerializer(serializers.ModelSerializer):
+    tournament_name = serializers.CharField(source="tournament.name", read_only=True)
+
+    class Meta:
+        model = TeamHonor
+        fields = ["id", "tournament", "tournament_name", "name", "tier", "image", "note", "order"]
+
+
+class PlayerHonorSerializer(serializers.ModelSerializer):
+    tournament_name = serializers.CharField(source="tournament.name", read_only=True)
+
+    class Meta:
+        model = PlayerHonor
+        fields = ["id", "tournament", "tournament_name", "name", "tier", "image", "note", "order"]
+
+
 class PlayerDetailSerializer(serializers.ModelSerializer):
     team_name = serializers.CharField(source="team.name", read_only=True)
     overall = serializers.IntegerField(read_only=True)
+    honors = PlayerHonorSerializer(many=True, read_only=True)
 
     class Meta:
         model = Player
         fields = [
             "id", "name", "avatar", "position", "number", "bio", "team", "team_name",
-            "overall",
+            "overall", "honors",
             *DIMENSION_FIELDS,
             *PLAYER_STAT_FIELDS,
         ]
@@ -58,10 +76,14 @@ class TeamListSerializer(serializers.ModelSerializer):
 class TeamDetailSerializer(serializers.ModelSerializer):
     players = PlayerSerializer(many=True, read_only=True)
     leaderboard_rank = serializers.SerializerMethodField()
+    honors = TeamHonorSerializer(many=True, read_only=True)
 
     class Meta:
         model = Team
-        fields = ["id", "name", "logo", "rank", "description", "song", "points", "players", "leaderboard_rank"]
+        fields = [
+            "id", "name", "logo", "rank", "description", "song", "points",
+            "players", "leaderboard_rank", "honors",
+        ]
 
     def get_leaderboard_rank(self, obj):
         from .models import Team

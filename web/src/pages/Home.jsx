@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Skeleton, Modal, Button } from 'antd'
-import { PlayCircleFilled, RightOutlined } from '@ant-design/icons'
+import { PlayCircleFilled, RightOutlined, FireOutlined } from '@ant-design/icons'
 import BannerCarousel from '../components/BannerCarousel'
 import { MatchCard, TeamLogo } from '../components/MatchCard'
 import { getHome } from '../api/home'
@@ -66,7 +66,10 @@ function HomeRight({ matches, loading }) {
           justifyContent: 'space-between',
         }}
       >
-        <span style={{ fontWeight: 800, fontSize: 15 }}>🔥 今日焦点</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontWeight: 800, fontSize: 15 }}>
+          <FireOutlined style={{ color: '#ff8a3d', fontSize: 16 }} />
+          今日焦点
+        </span>
         <span
           className="section-link"
           onClick={() => navigate('/schedule')}

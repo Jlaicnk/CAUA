@@ -58,6 +58,7 @@ class StandingsRowSerializer(serializers.Serializer):
     goal_diff = serializers.IntegerField()
     status = serializers.CharField()
     record = serializers.CharField()
+    net_points = serializers.IntegerField(read_only=True, default=0)
 
 
 class StandingsSerializer(serializers.Serializer):
@@ -78,7 +79,7 @@ class MatchListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Match
         fields = [
-            "id", "round", "knockout", "tournament", "tournament_name",
+            "id", "round", "knockout", "bracket_kind", "tournament", "tournament_name",
             "home_team", "away_team",
             "home_score", "away_score", "match_date", "status",
         ]
@@ -92,7 +93,7 @@ class MatchDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Match
         fields = [
-            "id", "round", "knockout", "tournament", "tournament_name",
+            "id", "round", "knockout", "bracket_kind", "tournament", "tournament_name",
             "home_team", "away_team",
             "home_score", "away_score", "match_date", "status",
         ]

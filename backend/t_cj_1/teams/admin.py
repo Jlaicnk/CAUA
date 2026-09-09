@@ -1,6 +1,23 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from .models import Team, Player
+from tournaments.models import TeamHonor, PlayerHonor
+
+
+class TeamHonorInline(admin.TabularInline):
+    model = TeamHonor
+    extra = 1
+    autocomplete_fields = ["tournament"]
+    fields = ["tournament", "name", "tier", "image", "note", "order"]
+    ordering = ["order", "id"]
+
+
+class PlayerHonorInline(admin.TabularInline):
+    model = PlayerHonor
+    extra = 1
+    autocomplete_fields = ["tournament"]
+    fields = ["tournament", "name", "tier", "image", "note", "order"]
+    ordering = ["order", "id"]
 
 
 class PlayerInline(admin.TabularInline):
@@ -16,7 +33,7 @@ class TeamAdmin(admin.ModelAdmin):
     list_display_links = ["name"]
     search_fields = ["name"]
     ordering = ["-points", "rank"]
-    inlines = [PlayerInline]
+    inlines = [TeamHonorInline, PlayerInline]
     actions = ["reset_points_to_1000"]
 
     def save_model(self, request, obj, form, change):
@@ -62,6 +79,7 @@ class PlayerAdmin(admin.ModelAdmin):
     search_fields = ["name", "team__name"]
     ordering = ["team", "number"]
     readonly_fields = ["overall_display"]
+    inlines = [PlayerHonorInline]
 
     fieldsets = [
         ("基本信息", {"fields": ["team", "number", "name", "position", "avatar", "bio"]}),

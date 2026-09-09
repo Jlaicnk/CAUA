@@ -11,6 +11,8 @@ class TeamViewSet(viewsets.ReadOnlyModelViewSet):
         qs = Team.objects.all()
         if self.action == "list":
             return qs.order_by("-points", "rank")
+        if self.action == "retrieve":
+            return qs.prefetch_related("honors__tournament", "players")
         return qs
 
     def get_serializer_class(self):
@@ -120,5 +122,5 @@ class TeamHistoryView(generics.RetrieveAPIView):
 
 
 class PlayerDetailView(generics.RetrieveAPIView):
-    queryset = Player.objects.all()
+    queryset = Player.objects.prefetch_related("honors__tournament")
     serializer_class = PlayerDetailSerializer

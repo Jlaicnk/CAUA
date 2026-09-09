@@ -4,6 +4,7 @@ import { HomeOutlined, TrophyOutlined, TeamOutlined, UserOutlined, LoginOutlined
 import { Avatar, Button, Dropdown, message, Spin } from 'antd'
 import { useAuth } from './context/AuthContext'
 import ErrorBoundary from './components/ErrorBoundary'
+import { BallIcon } from './components/BrandIcons'
 
 const Home = lazy(() => import('./pages/Home'))
 const Schedule = lazy(() => import('./pages/Schedule'))
@@ -22,7 +23,9 @@ function LogoLink() {
   const navigate = useNavigate()
   return (
     <div className="logo" onClick={() => navigate('/')}>
-      <span className="logo-badge">⚽</span>
+      <span className="logo-badge">
+        <BallIcon size={18} />
+      </span>
       <span className="logo-name">
         CAUA <strong>赛事平台</strong>
       </span>

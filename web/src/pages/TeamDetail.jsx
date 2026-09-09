@@ -1,11 +1,284 @@
 import { useEffect, useRef, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { Skeleton, Empty, Tag, Button } from 'antd'
-import { ArrowLeftOutlined, PlayCircleFilled, PauseCircleFilled, RiseOutlined, FallOutlined } from '@ant-design/icons'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import { Skeleton, Empty } from 'antd'
+import {
+  ArrowLeftOutlined,
+  PlayCircleFilled,
+  PauseCircleFilled,
+  TrophyOutlined,
+  TeamOutlined,
+} from '@ant-design/icons'
 import { getTeam, getTeamHistory } from '../api/teams'
 import { TeamLogo } from '../components/MatchCard'
 import PointsLineChart from '../components/PointsLineChart'
+import HonorWall from '../components/HonorWall'
 import { mediaUrl } from '../utils/mediaUrl'
+
+const MEDAL_STYLE = {
+  1: { label: '第一', cls: 'gold' },
+  2: { label: '第二', cls: 'silver' },
+  3: { label: '第三', cls: 'bronze' },
+}
+
+function buildRecord(matches) {
+  return matches.reduce(
+    (acc, m) => {
+      if (m.result === 'W') acc.wins += 1
+      else if (m.result === 'L') acc.losses += 1
+      return acc
+    },
+    { wins: 0, losses: 0 }
+  )
+}
+
+function formatShortDate(datetime) {
+  if (!datetime) return ''
+  return String(datetime).replace('T', ' ').slice(0, 16)
+}
+
+function TeamHero({ team, history, playing, onToggleSong }) {
+  const matches = history?.matches || []
+  const record = buildRecord(matches)
+  const hasData = matches.length > 0
+  const rank = team.leaderboard_rank ?? team.rank
+  const medal = MEDAL_STYLE[rank]
+
+  return (
+    <div className="team-hero">
+      <div className="team-hero-inner">
+        <div className="team-hero-left">
+          <div className="team-crest-row">
+            <div className="team-crest-frame">
+              <TeamLogo logo={team.logo} name={team.name} size={100} />
+            </div>
+            <div className="team-title-block">
+              <div className="team-kicker">
+                <TrophyOutlined />
+                队伍档案
+                {medal && <span className={`team-medal ${medal.cls}`}>{medal.label}</span>}
+              </div>
+              <h1 className="team-name">{team.name}</h1>
+              <div className="team-chips">
+                <span className="hero-chip">
+                  <TeamOutlined /> {team.players?.length || 0} 名队员
+                </span>
+                {team.song && (
+                  <button
+                    type="button"
+                    className={`hero-chip hero-chip-action ${playing ? 'active' : ''}`}
+                    onClick={onToggleSong}
+                  >
+                    {playing ? <PauseCircleFilled /> : <PlayCircleFilled />}
+                    {playing ? '暂停队歌' : '播放队歌'}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {team.description && <p className="team-desc">{team.description}</p>}
+        </div>
+
+        <div className="team-stats">
+          <div className="team-stat">
+            <span className="team-stat-label">综合排名</span>
+            <span className="team-stat-value">
+              #{rank}
+              {medal && <em>{medal.label}</em>}
+            </span>
+          </div>
+          <div className="team-stat">
+            <span className="team-stat-label">当前积分</span>
+            <span className="team-stat-value">
+              {team.points ?? 1000}
+              <em>PTS</em>
+            </span>
+          </div>
+          <div className="team-stat">
+            <span className="team-stat-label">近期战绩</span>
+            <span className="team-stat-value">
+              {hasData ? `${record.wins} 胜 ${record.losses} 负` : '—'}
+              <em>{hasData ? `最近 ${matches.length} 场` : '暂无比赛'}</em>
+            </span>
+          </div>
+          <div className="team-stat">
+            <span className="team-stat-label">胜率</span>
+            <span className="team-stat-value">
+              {hasData ? `${Math.round((record.wins / matches.length) * 100)}%` : '—'}
+              <em>{hasData ? '以最近记录为准' : '等待首场比赛'}</em>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {hasData && (
+        <div className="team-form-line">
+          <span className="team-form-label">近期走势</span>
+          {matches.slice(-10).map((m, i) => (
+            <span
+              key={`${m.match_id}-${i}`}
+              className={`team-form-dot ${m.result === 'W' ? 'win' : 'loss'}`}
+              title={`${m.result === 'W' ? '胜' : '负'} ${m.opponent_name}`}
+            />
+          ))}
+          <span className="team-form-text">
+            最近 {matches.length} 场：{record.wins} 胜 {record.losses} 负
+          </span>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function RecentResults({ history }) {
+  const navigate = useNavigate()
+  const matches = history?.matches || []
+  const chartPoints = history?.chart?.points || []
+  const hasData = matches.length > 0
+  const record = buildRecord(matches)
+
+  return (
+    <>
+      <div className="section-head">
+        <h2 className="section-title">近期战绩 · 积分走势</h2>
+        <span className="text-2nd" style={{ fontSize: 13 }}>
+          {hasData ? `最近 ${matches.length} 场 · 当前积分 ${history?.points ?? 1000}` : '暂无比赛记录'}
+        </span>
+      </div>
+
+      <div className="trend-panel">
+        <div className="trend-layout">
+          <div className="trend-chart">
+            <div className="trend-chart-title">积分曲线</div>
+            <div className="trend-chart-body">
+              <PointsLineChart
+                points={chartPoints}
+                labels={chartPoints.map((_, i) => (i === 0 ? '初始' : `${i} 场后`))}
+              />
+            </div>
+          </div>
+          <div className="trend-summary">
+            <div className="trend-summary-title">数据速览</div>
+            <div className="trend-summary-grid">
+              <div className="trend-summary-item">
+                <b className={record.wins >= record.losses ? 'up' : 'down'}>{record.wins}</b>
+                <span>胜场</span>
+              </div>
+              <div className="trend-summary-item">
+                <b className={record.wins < record.losses ? 'down' : 'up'}>{record.losses}</b>
+                <span>负场</span>
+              </div>
+              <div className="trend-summary-item">
+                <b className="up">{Math.round((record.wins / Math.max(matches.length, 1)) * 100)}%</b>
+                <span>胜率</span>
+              </div>
+              <div className="trend-summary-item">
+                <b>{history?.points ?? 1000}</b>
+                <span>现积分</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="result-list-title">
+          比赛明细
+          <span>点击队伍名可查看队伍档案</span>
+        </div>
+        {hasData ? (
+          <div className="result-list">
+            {matches.map((m) => {
+              const win = m.result === 'W'
+              const pc = m.points_change
+              return (
+                <div className="result-row" key={m.match_id}>
+                  <span className={`result-mark ${win ? 'win' : 'loss'}`}>{win ? '胜' : '负'}</span>
+                  <span className="result-date">{formatShortDate(m.match_date)}</span>
+                  {m.tournament_name && (
+                    <span className="result-tournament" title={m.tournament_name}>
+                      {m.tournament_name}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    className="result-opp"
+                    onClick={() => navigate(`/teams/${m.opponent_id}`)}
+                  >
+                    <span className="result-vs">vs</span>
+                    {m.opponent_logo ? (
+                      <img src={mediaUrl(m.opponent_logo)} alt={m.opponent_name} />
+                    ) : (
+                      <span className="result-opp-init">{m.opponent_name?.charAt(0) || '?'}</span>
+                    )}
+                    <b>{m.opponent_name}</b>
+                  </button>
+                  <span className={`result-score ${win ? 'win' : 'loss'}`}>
+                    {m.team_score} : {m.opponent_score}
+                  </span>
+                  <span className="result-pts">
+                    {pc != null && <b className={pc >= 0 ? 'up' : 'down'}>{pc >= 0 ? `+${pc}` : pc}</b>}
+                    {m.points_after != null && <em>→ {m.points_after}</em>}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="page-empty">该队伍还没有已完成的比赛</div>
+        )}
+      </div>
+    </>
+  )
+}
+
+function Squad({ team }) {
+  const navigate = useNavigate()
+  return (
+    <>
+      <div className="section-head">
+        <h2 className="section-title">队员阵容</h2>
+        <span className="text-2nd" style={{ fontSize: 13 }}>
+          {team.players?.length || 0} 名队员 · 点击查看角色档案
+        </span>
+      </div>
+      {team.players?.length ? (
+        <div className="squad-grid">
+          {team.players.map((p) => (
+            <div key={p.id} className="squad-card" onClick={() => navigate(`/players/${p.id}`)}>
+              <SquadAvatar player={p} />
+              <div className="squad-player-name">{p.name}</div>
+              <div className="squad-player-pos">{p.position}</div>
+              {p.overall != null && (
+                <div className="squad-ovr">
+                  <span>OVR</span>
+                  <b>{p.overall}</b>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <Empty description="暂无队员" style={{ padding: '30px 0' }} />
+      )}
+    </>
+  )
+}
+
+function SquadAvatar({ player }) {
+  const [broken, setBroken] = useState(false)
+  const showInit = !player.avatar || broken
+  return (
+    <div className="squad-avatar-wrap">
+      <div className="squad-avatar">
+        {!showInit ? (
+          <img src={mediaUrl(player.avatar)} alt={player.name} loading="lazy" onError={() => setBroken(true)} />
+        ) : (
+          <span className="squad-avatar-init">{player.name?.charAt(0) || '?'}</span>
+        )}
+      </div>
+      <span className="squad-no">#{player.number}</span>
+    </div>
+  )
+}
 
 export default function TeamDetail() {
   const { id } = useParams()
@@ -14,7 +287,6 @@ export default function TeamDetail() {
   const [loading, setLoading] = useState(true)
   const [playing, setPlaying] = useState(false)
   const audioRef = useRef(null)
-  const navigate = useNavigate()
 
   useEffect(() => {
     setLoading(true)
@@ -53,200 +325,38 @@ export default function TeamDetail() {
     }
   }, [team])
 
-  if (loading) {
-    return (
-      <div className="page">
-        <Skeleton active paragraph={{ rows: 8 }} />
-      </div>
-    )
-  }
-  if (!team) {
-    return <div className="page page-empty">队伍不存在或加载失败</div>
-  }
-
   return (
-    <div className="page" style={{ maxWidth: 860 }}>
-      <span
-        onClick={() => navigate(-1)}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--text-2nd)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-      >
-        <ArrowLeftOutlined /> 返回
-      </span>
-
-      <div className="panel" style={{ marginTop: 14, padding: 0, overflow: 'hidden' }}>
-        {/* top color strip */}
-        <div
-          style={{
-            height: 6,
-            background: 'linear-gradient(90deg, var(--primary), #ffb3c6 40%, #dfe9f2 100%)',
-          }}
-        />
-        <div style={{ padding: 28, display: 'flex', alignItems: 'center', gap: 22, flexWrap: 'wrap' }}>
-          <div style={{ border: '1px solid var(--border)', borderRadius: '50%', padding: 4, flexShrink: 0 }}>
-            <TeamLogo logo={team.logo} name={team.name} size={92} />
-          </div>
-          <div style={{ flex: 1, minWidth: 220 }}>
-            <div style={{ fontSize: 24, fontWeight: 800 }}>{team.name}</div>
-            <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <Tag style={{ borderRadius: 6, marginInlineEnd: 0 }}>排名 {team.leaderboard_rank ?? team.rank}</Tag>
-              <Tag color="magenta" style={{ borderRadius: 6, marginInlineEnd: 0, fontWeight: 700 }}>
-                积分 {team.points ?? 1000}
-              </Tag>
-              {team.song && (
-                <Button
-                  size="small"
-                  icon={playing ? <PauseCircleFilled /> : <PlayCircleFilled />}
-                  onClick={togglePlay}
-                  style={{ borderRadius: 6 }}
-                >
-                  {playing ? '暂停队歌' : '播放队歌'}
-                </Button>
-              )}
-            </div>
-            {team.song && <audio ref={audioRef} src={team.song} preload="metadata" />}
-            {team.description && (
-              <div className="text-2nd" style={{ marginTop: 14, lineHeight: 1.8, fontSize: 14 }}>
-                {team.description}
-              </div>
-            )}
-          </div>
-        </div>
+    <div className="page detail-page" style={{ maxWidth: 1080 }}>
+      <div className="detail-nav">
+        <Link to="/teams" className="back-link">
+          <ArrowLeftOutlined /> 队伍排行榜
+        </Link>
+        <span className="detail-nav-note">CAUA · 队伍档案</span>
       </div>
 
-      {/* 近期战绩 */}
-      <RecentResults teamId={Number(id)} history={history} />
-
-      <div className="section-head">
-        <h2 className="section-title">队员列表</h2>
-        <span className="text-2nd" style={{ fontSize: 13 }}>{team.players?.length || 0} 名队员</span>
-      </div>
-      {team.players?.length ? (
-        <div className="player-grid">
-          {team.players.map((p) => (
-            <div key={p.id} className="player-card" onClick={() => navigate(`/players/${p.id}`)}>
-              <div style={{ width: 64, height: 64, margin: '0 auto 12px', position: 'relative' }}>
-                <div className="logo-bubble" style={{ width: 64, height: 64, overflow: 'hidden' }}>
-                  {p.avatar ? (
-                    <img src={mediaUrl(p.avatar)} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <div className="init-badge">{p.name?.charAt(0)}</div>
-                  )}
-                </div>
-                <span
-                  style={{
-                    position: 'absolute',
-                    bottom: -2,
-                    right: -6,
-                    background: 'var(--primary)',
-                    color: '#fff',
-                    borderRadius: 6,
-                    padding: '0 6px',
-                    fontSize: 11,
-                    fontWeight: 800,
-                  }}
-                >
-                  #{p.number}
+      {loading ? (
+        <Skeleton active paragraph={{ rows: 8 }} />
+      ) : !team ? (
+        <div className="page-empty">队伍不存在或加载失败</div>
+      ) : (
+        <>
+          {team.song && <audio ref={audioRef} src={mediaUrl(team.song)} preload="metadata" />}
+          <TeamHero team={team} history={history} playing={playing} onToggleSong={togglePlay} />
+          {team.honors?.length > 0 && (
+            <>
+              <div className="section-head">
+                <h2 className="section-title">荣誉墙</h2>
+                <span className="text-2nd" style={{ fontSize: 13 }}>
+                  {team.honors.length} 项赛事荣誉
                 </span>
               </div>
-              <div style={{ fontWeight: 700, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {p.name}
-              </div>
-              <div className="text-2nd" style={{ fontSize: 12, marginTop: 4 }}>{p.position}</div>
-              {p.overall != null && (
-                <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--primary-deep)', marginTop: 2 }}>OVR {p.overall}</div>
-              )}
-            </div>
-          ))}
-        </div>
-      ) : (
-        <Empty description="暂无队员" />
+              <HonorWall honors={team.honors} />
+            </>
+          )}
+          {history && <RecentResults history={history} />}
+          <Squad team={team} />
+        </>
       )}
     </div>
-  )
-}
-
-function RecentResults({ teamId, history }) {
-  const navigate = useNavigate()
-  const matches = history?.matches || []
-  const chartPoints = history?.chart?.points || []
-  const hasData = matches.length > 0
-
-  if (!history) return null // still loading with main team data
-
-  return (
-    <>
-      <div className="section-head" style={{ marginTop: 26 }}>
-        <h2 className="section-title">近期战绩 · 积分走势</h2>
-        <span className="text-2nd" style={{ fontSize: 13 }}>
-          {hasData ? `最近 ${matches.length} 场 · 当前积分 ${history.points}` : '暂无比赛记录'}
-        </span>
-      </div>
-
-      <div className="panel" style={{ padding: 24 }}>
-        {/* 折线图 */}
-        <div style={{ overflowX: 'auto' }}>
-          <PointsLineChart
-            points={chartPoints}
-            labels={chartPoints.map((_, i) => (i === 0 ? '初始' : `${i}场`))}
-          />
-        </div>
-
-        {/* 比赛列表 */}
-        {hasData ? (
-          <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {matches.map((m) => {
-              const win = m.result === 'W'
-              const pc = m.points_change
-              return (
-                <div
-                  key={m.match_id}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '8px 12px', borderRadius: 10,
-                    background: 'var(--surface-2)', fontSize: 13,
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  <span style={{ width: 34, fontWeight: 800, fontSize: 12 }}>{win ? <RiseOutlined style={{ color: 'var(--success)' }} /> : <FallOutlined style={{ color: 'var(--primary)' }} />}</span>
-                  <span className="text-2nd" style={{ fontSize: 12, minWidth: 96 }}>
-                    {String(m.match_date).replace('T', ' ').slice(0, 16)}
-                  </span>
-                  <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span
-                      onClick={() => navigate(`/teams/${m.opponent_id}`)}
-                      style={{ cursor: 'pointer', fontWeight: 600 }}
-                    >
-                      vs {m.opponent_name}
-                    </span>
-                    {m.opponent_logo ? (
-                      <img src={mediaUrl(m.opponent_logo)} alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'contain', flexShrink: 0 }} />
-                    ) : null}
-                  </span>
-                  <span style={{ fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>
-                    {win ? (
-                      <span style={{ color: 'var(--success)' }}>胜 {m.team_score}-{m.opponent_score}</span>
-                    ) : (
-                      <span style={{ color: 'var(--primary)' }}>负 {m.team_score}-{m.opponent_score}</span>
-                    )}
-                  </span>
-                  <span style={{ fontWeight: 700, width: 76, textAlign: 'right' }}>
-                    {pc != null && (
-                      <span style={{ color: pc >= 0 ? 'var(--success)' : 'var(--primary)' }}>
-                        {pc >= 0 ? `+${pc}` : pc}
-                      </span>
-                    )}
-                    {m.points_after != null && (
-                      <span className="text-2nd" style={{ fontSize: 11, marginLeft: 4 }}>→{m.points_after}</span>
-                    )}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        ) : (
-          <div className="page-empty" style={{ padding: '24px 0' }}>该队伍还没有已完成的比赛</div>
-        )}
-      </div>
-    </>
   )
 }
