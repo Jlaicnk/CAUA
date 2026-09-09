@@ -1113,3 +1113,118 @@ img {
     flex: 0 0 170px;
   }
 }
+
+/* ============ 单循环联赛 ============ */
+.league-board .swiss-board-row {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.league-board .swiss-col {
+  flex: 0 0 168px;
+}
+
+/* 今日队伍积分变动 */
+.league-day-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.league-day-meta {
+  color: var(--text-2nd);
+  font-size: 12px;
+}
+
+.league-day-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 12px;
+}
+
+.league-day-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.league-day-side {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.league-day-side.right {
+  flex-direction: row-reverse;
+}
+
+.league-day-team {
+  font-weight: 700;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.league-day-side.right .league-day-team {
+  text-align: right;
+}
+
+.league-day-score {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  padding: 6px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.league-day-score:hover {
+  background: rgba(244, 91, 141, 0.08);
+}
+
+.league-day-score span {
+  color: var(--text-3rd);
+  font-size: 14px;
+}
+
+.day-delta {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}
+
+.day-delta-up {
+  color: #1f9d7a;
+  background: rgba(31, 157, 122, 0.12);
+}
+
+.day-delta-down {
+  color: #e05b7a;
+  background: rgba(244, 91, 141, 0.12);
+}
+
+.day-delta-zero {
+  color: var(--text-3rd);
+  background: var(--surface-2);
+}
+

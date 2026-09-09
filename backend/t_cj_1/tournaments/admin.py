@@ -2,7 +2,14 @@ from django.contrib import admin, messages
 from django.utils.html import format_html
 from django.core.exceptions import ValidationError
 from .models import Tournament, TournamentTeam, Match
-from . import swiss
+from . import swiss, round_robin
+
+
+def _engine(tournament):
+    """Pick the progression engine for a tournament by its format."""
+    if tournament.format == "league":
+        return round_robin
+    return swiss
 
 
 class TournamentTeamInline(admin.TabularInline):
@@ -60,7 +67,7 @@ class TournamentAdmin(admin.ModelAdmin):
     def start_tournament(self, request, queryset):
         for t in queryset:
             try:
-                swiss.start_tournament(t)
+                _engine(t).start_tournament(t)
                 self.message_user(request, f"「{t.name}」已开始，已生成第 1 轮", messages.SUCCESS)
             except Exception as e:
                 self.message_user(request, f"「{t.name}」失败：{e}", messages.ERROR)
@@ -69,7 +76,7 @@ class TournamentAdmin(admin.ModelAdmin):
     def advance_round(self, request, queryset):
         for t in queryset:
             try:
-                res = swiss.settle_and_advance(t)
+                res = _engine(t).settle_and_advance(t)
                 self.message_user(request, f"「{t.name}」{res['message']}", messages.SUCCESS)
             except ValidationError as e:
                 self.message_user(request, f"「{t.name}」{e}", messages.ERROR)
@@ -80,6 +87,9 @@ class TournamentAdmin(admin.ModelAdmin):
     def generate_knockout(self, request, queryset):
         for t in queryset:
             try:
+                if t.format != "swiss":
+                    self.message_user(request, f"「{t.name}」非瑞士轮赛制，跳过", messages.WARNING)
+                    continue
                 if not t.knockout_after_swiss:
                     self.message_user(request, f"「{t.name}」未勾选「瑞士轮后接淘汰赛」，跳过", messages.WARNING)
                     continue
@@ -95,7 +105,7 @@ class TournamentAdmin(admin.ModelAdmin):
     @admin.action(description="③ 重置赛事（清空赛程与战绩）")
     def reset_tournament(self, request, queryset):
         for t in queryset:
-            swiss.reset_tournament(t)
+            _engine(t).reset_tournament(t)
             self.message_user(request, f"「{t.name}」已重置", messages.WARNING)
 
 

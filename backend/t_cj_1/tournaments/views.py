@@ -194,6 +194,7 @@ class MatchHistoryView(RetrieveAPIView):
 
 class TournamentBracketView(RetrieveAPIView):
     """淘汰赛阶段 bracket（按轮次返回对阵与结果）。"""
+
     queryset = Tournament.objects.all()
 
     def retrieve(self, request, *args, **kwargs):
@@ -229,3 +230,52 @@ class TournamentBracketView(RetrieveAPIView):
             rounds.append({"round": r, "name": round_names.get(r, f"第 {r} 轮"), "matches": rows})
 
         return Response({"tournament_id": tournament.id, "phase": tournament.phase, "rounds": rounds})
+
+
+class TournamentDayChangesView(RetrieveAPIView):
+    """最新已完赛一轮的比赛结果 + 每队积分变动（联赛「今日队伍积分变动」模块数据源）。"""
+
+    queryset = Tournament.objects.all()
+
+    def retrieve(self, request, *args, **kwargs):
+        tournament = self.get_object()
+        finished = list(
+            Match.objects.filter(tournament=tournament, status="finished")
+            .select_related("home_team", "away_team")
+            .order_by("round", "id")
+        )
+        if not finished:
+            return Response({
+                "tournament_id": tournament.id,
+                "round": None,
+                "date": None,
+                "matches": [],
+            })
+
+        latest_round = finished[-1].round
+        round_ms = [m for m in finished if m.round == latest_round]
+
+        def change(team, match):
+            pc = PointsChange.objects.filter(team=team, match=match).order_by("-id").first()
+            return pc.amount if pc else 0
+
+        rows = []
+        for m in round_ms:
+            rows.append({
+                "match_id": m.id,
+                "round": m.round,
+                "match_date": m.match_date.isoformat(),
+                "home_team": TeamListSerializer(m.home_team, context={"request": request}).data,
+                "away_team": TeamListSerializer(m.away_team, context={"request": request}).data,
+                "home_score": m.home_score,
+                "away_score": m.away_score,
+                "home_points_change": change(m.home_team, m),
+                "away_points_change": change(m.away_team, m),
+            })
+
+        return Response({
+            "tournament_id": tournament.id,
+            "round": latest_round,
+            "date": round_ms[0].match_date.date().isoformat(),
+            "matches": rows,
+        })

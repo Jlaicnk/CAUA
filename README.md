@@ -69,7 +69,7 @@ CAUA/
 ├── web/                              # Web 前端 (React + Vite)
 │   └── src/
 │       ├── api/                      # axios 接口封装
-│       ├── components/               # 公共组件（含 BracketView 对阵图、SimulatorModal 模拟器、ErrorBoundary）
+│       ├── components/               # 公共组件（含 BracketView 对阵图、SimulatorModal 模拟器、ErrorBoundary、LeagueSchedule 联赛对阵板、LeagueDayPanel 每日积分变动）
 │       ├── context/                  # 登录态管理
 │       ├── pages/                    # 页面
 │       ├── styles/                   # 全局样式
@@ -82,7 +82,7 @@ CAUA/
 │       ├── config/                   # Django 配置
 │       ├── accounts/                 # 用户模块
 │       ├── teams/                    # 队伍模块
-│       ├── tournaments/              # 赛事模块
+│       ├── tournaments/              # 赛事模块（swiss.py 晋级瑞士轮、round_robin.py 单循环联赛、knockout.py 淘汰赛）
 │       ├── home/                     # 首页模块
 │       ├── manage.py
 │       └── seed_data.py              # 种子数据脚本
@@ -377,7 +377,7 @@ npm run build
 | `/` | 首页 | Banner 轮播 + 今日焦点 + 近期赛事 + 视频流 + 队伍 Top5 |
 | `/schedule` | 赛程 | 按赛事筛选，按状态分组 |
 | `/tournaments` | 赛事列表 | 赛事状态标签 |
-| `/tournaments/:id` | 赛事详情 | 简介/规则 + 瑞士轮对阵图 + 淘汰赛对阵图（如启用）+ 队伍状态/最终排行榜 + 本地模拟推演 |
+| `/tournaments/:id` | 赛事详情 | 简介/规则 + 对阵图（瑞士轮/单循环按赛制切换）+ 淘汰赛对阵图（如启用）+ 队伍状态/最终排行榜 + 本地模拟推演；单循环赛事另含「今日队伍积分变动」 |
 | `/matches/:id` | 比赛详情 | 两队/比分/积分变动 + 两队近期交手记录（最近5场，无则暂无） |
 | `/teams` | 队伍排行榜 | 前三名领奖台 + 完整排名（按积分） |
 | `/teams/:id` | 队伍详情 | 简介 + 积分榜排名 + 队歌播放 + 近期10场战绩（对手头像+积分折线图）+ 队员网格 |
@@ -440,6 +440,7 @@ Authorization: Bearer <access_token>
 | GET | `/api/tournaments/{id}/` | 赛事详情（含赛制 format、`phase` 当前阶段、`knockout_after_swiss` 是否后接淘汰赛、rounds、current_round、晋级/淘汰/存活计数） |
 | GET | `/api/tournaments/{id}/standings/` | 积分榜/队伍状态；赛事结束后返回最终 1~32 排行（前4=冠军/亚军/季军/殿军） |
 | GET | `/api/tournaments/{id}/bracket/` | 淘汰赛对阵图（各轮次对阵与结果） |
+| GET | `/api/tournaments/{id}/day-changes/` | 最新已完赛一轮的比赛 + 每队积分变动（联赛「今日队伍积分变动」数据源；无完赛场次则 `round: null`） |
 | GET | `/api/matches/` | 赛程列表 |
 | GET | `/api/matches/?tournament={id}` | 按赛事筛选赛程 |
 | GET | `/api/matches/{id}/` | 比赛详情 |
@@ -587,6 +588,18 @@ org.gradle.jvmargs=-Xmx1024m -Dfile.encoding=UTF-8
   - 其余 5~32 名按：胜场多 → 败场少 → 积分多 → 队伍编号小 排序
 
 未勾选「瑞士轮后接淘汰赛」的赛事（如次元杯、新春邀请赛）瑞士轮决出 16 强即结束，不进入淘汰赛。
+
+> **单循环联赛（循环赛赛制）**：`format` 选「循环赛」的赛事为 **8 队单循环**，每轮 4 场、共 7 轮 28 场（轮转法自动配对，无重复交手）。推进方式与瑞士轮一致：① 开始赛事（要求恰好 8 支参赛队）→ 逐轮在 Match 内联表单填比分 → ② 推进，第 7 轮结算后赛事自动结束。积分同样**逐场即时结算**（比分不能相同、无平局）。联赛无晋级/淘汰与排行榜，Web 赛事详情页展示「单循环赛程」对阵板与「**今日队伍积分变动**」模块（只显示最新已完赛一轮的 4 场比赛及每队 ±积分，点比分区可进比赛详情、点队伍进队伍详情）。此类赛事需在 Admin 手动创建并添加 8 个参赛队。
+
+### Q12: 单循环联赛怎么跑 / 怎么看
+
+单循环联赛固定 8 支队伍单循环：
+
+1. 在 Admin 新建赛事，赛制选「循环赛」（`format`），并添加 **8 个**参赛队（开始时会校验恰好 8 队）
+2. 「① 开始赛事」生成第 1 轮（4 场，轮转法配对）→ 逐轮填比分（无平局，填完即时结算积分）→ 「② 推进」
+3. 第 7 轮结算后赛事自动结束，不进入淘汰赛、也不生成排行榜
+
+Web 赛事详情页展示「单循环赛程」对阵板；下方「**今日队伍积分变动**」只显示最新已完赛一轮的 4 场比赛与每队 ±积分——打到第几轮就显示第几轮，全部结束后仍停留最后一轮。
 
 ---
 

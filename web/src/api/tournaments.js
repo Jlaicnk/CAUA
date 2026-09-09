@@ -14,3 +14,5 @@ export const getMatchHistory = (id) => client.get(`matches/${id}/history/`)
 export const getStandings = (id) => client.get(`tournaments/${id}/standings/`)
 
 export const getTournamentBracket = (id) => client.get(`tournaments/${id}/bracket/`)
+
+export const getTournamentDayChanges = (id) => client.get(`tournaments/${id}/day-changes/`)

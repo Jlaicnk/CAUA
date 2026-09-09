@@ -5,6 +5,8 @@ import { ArrowLeftOutlined, TrophyOutlined, CalendarOutlined, InfoCircleOutlined
 import { getTournament, getMatches, getStandings, getTournamentBracket } from '../api/tournaments'
 import BracketView from '../components/BracketView'
 import KnockoutBracket from '../components/KnockoutBracket'
+import LeagueSchedule from '../components/LeagueSchedule'
+import LeagueDayPanel from '../components/LeagueDayPanel'
 import { roundDate, formatLabel } from '../utils/format'
 import { mediaUrl } from '../utils/mediaUrl'
 import SimulatorModal from '../components/SimulatorModal'
@@ -81,6 +83,7 @@ export default function TournamentDetail() {
 
   const stMeta = STAGE_META[t.stage_status] || STAGE_META.not_started
   const interval = t.round_interval_days || 3
+  const isLeague = t.format === 'league'
   const hasKnockout = t.knockout_after_swiss
   const bracketRounds = bracket?.rounds || []
 
@@ -90,9 +93,11 @@ export default function TournamentDetail() {
         <Link to="/tournaments" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--text-2nd)', fontSize: 13, fontWeight: 600 }}>
           <ArrowLeftOutlined /> 返回赛事列表
         </Link>
-        <Button icon={<ThunderboltOutlined />} onClick={() => setShowSim(true)}>
-          本地模拟推演
-        </Button>
+        {!isLeague && (
+          <Button icon={<ThunderboltOutlined />} onClick={() => setShowSim(true)}>
+            本地模拟推演
+          </Button>
+        )}
       </div>
 
       {/* header */}
@@ -131,7 +136,7 @@ export default function TournamentDetail() {
               </div>
               <div className="text-2nd" style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 12, fontSize: 13, flexWrap: 'wrap' }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><CalendarOutlined /> {t.start_date} ~ {t.end_date}</span>
-                {t.stage_status !== 'finished' && (
+                {!isLeague && t.stage_status !== 'finished' && (
                   <>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                       <RiseOutlined style={{ color: 'var(--success)' }} /> 晋级 {t.advanced_count || 0}/16
@@ -161,45 +166,57 @@ export default function TournamentDetail() {
 
       {/* bracket area */}
       <div className="section-head" style={{ marginTop: 26 }}>
-        <h2 className="section-title">晋级对阵图</h2>
+        <h2 className="section-title">{isLeague ? '单循环赛程' : '晋级对阵图'}</h2>
         {t.stage_status !== 'not_started' && rounds.length > 0 && (
           <span className="text-2nd" style={{ fontSize: 13 }}>
-            每 {interval} 天一轮 · 共已生成 {rounds.length} 轮
+            {isLeague
+              ? '每队与其他 7 队各赛一场 · 每轮 4 场 · 共 7 轮'
+              : `每 ${interval} 天一轮 · 共已生成 ${rounds.length} 轮`}
           </span>
         )}
       </div>
       {t.stage_status === 'not_started' ? (
         <div className="page-empty">赛事尚未开始。管理员可在后台生成第 1 轮对阵。</div>
+      ) : isLeague ? (
+        <LeagueSchedule rounds={rounds} />
       ) : (
         <BracketView rounds={rounds} />
       )}
 
-      {/* knockout bracket */}
-      {hasKnockout && (
-        <>
-          <div className="section-head" style={{ marginTop: 26 }}>
-            <h2 className="section-title">淘汰赛对阵图</h2>
-            <span className="text-2nd" style={{ fontSize: 13 }}>
-              {bracketRounds.length ? `${bracketRounds.length} 轮` : '等待瑞士轮结束'}
-            </span>
-          </div>
-          <KnockoutBracket rounds={bracketRounds} phase={t.phase} />
-        </>
-      )}
-
-      {/* standings lists */}
-      <div className="section-head" style={{ marginTop: 26 }}>
-        <h2 className="section-title">{t.stage_status === 'finished' ? '最终排行榜' : '队伍状态'}</h2>
-        <span className="text-2nd" style={{ fontSize: 13 }}>点队伍查看详情</span>
-      </div>
-      {t.stage_status === 'finished' ? (
-        <FinalRankings rows={groups.finished} onClick={(teamId) => navigate(`/teams/${teamId}`)} />
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
-          <StatusList title={`🏆 已晋级 (${groups.adv.length})`} rows={groups.adv} tone="success" onClick={(teamId) => navigate(`/teams/${teamId}`)} />
-          <StatusList title={`⚡ 存活中 (${groups.alive.length})`} rows={groups.alive} tone="info" onClick={(teamId) => navigate(`/teams/${teamId}`)} />
-          <StatusList title={`💀 已出局 (${groups.elim.length})`} rows={groups.elim} tone="muted" onClick={(teamId) => navigate(`/teams/${teamId}`)} />
+      {isLeague && t.stage_status !== 'not_started' ? (
+        <div style={{ marginTop: 26 }}>
+          <LeagueDayPanel tournament={t} />
         </div>
+      ) : isLeague ? null : (
+        <>
+          {/* knockout bracket */}
+          {hasKnockout && (
+            <>
+              <div className="section-head" style={{ marginTop: 26 }}>
+                <h2 className="section-title">淘汰赛对阵图</h2>
+                <span className="text-2nd" style={{ fontSize: 13 }}>
+                  {bracketRounds.length ? `${bracketRounds.length} 轮` : '等待瑞士轮结束'}
+                </span>
+              </div>
+              <KnockoutBracket rounds={bracketRounds} phase={t.phase} />
+            </>
+          )}
+
+          {/* standings lists */}
+          <div className="section-head" style={{ marginTop: 26 }}>
+            <h2 className="section-title">{t.stage_status === 'finished' ? '最终排行榜' : '队伍状态'}</h2>
+            <span className="text-2nd" style={{ fontSize: 13 }}>点队伍查看详情</span>
+          </div>
+          {t.stage_status === 'finished' ? (
+            <FinalRankings rows={groups.finished} onClick={(teamId) => navigate(`/teams/${teamId}`)} />
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
+              <StatusList title={`🏆 已晋级 (${groups.adv.length})`} rows={groups.adv} tone="success" onClick={(teamId) => navigate(`/teams/${teamId}`)} />
+              <StatusList title={`⚡ 存活中 (${groups.alive.length})`} rows={groups.alive} tone="info" onClick={(teamId) => navigate(`/teams/${teamId}`)} />
+              <StatusList title={`💀 已出局 (${groups.elim.length})`} rows={groups.elim} tone="muted" onClick={(teamId) => navigate(`/teams/${teamId}`)} />
+            </div>
+          )}
+        </>
       )}
 
       <SimulatorModal
