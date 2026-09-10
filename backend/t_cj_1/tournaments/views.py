@@ -1,6 +1,7 @@
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.generics import RetrieveAPIView
+import math
 from django.db.models import Q
 from django.db.models import Sum
 from .models import Tournament, Match
@@ -222,12 +223,18 @@ class TournamentBracketView(RetrieveAPIView):
         for m in ms:
             by_round.setdefault(m.round, []).append(m)
 
-        round_names = {
-            1: "1/8 决赛",
-            2: "1/4 决赛",
-            3: "半决赛",
-            4: "决赛 · 季军赛",
-        }
+        first_round = min(by_round.keys()) if by_round else 0
+        bracket_size = len(by_round.get(first_round, [])) * 2
+        total_rounds = int(round(math.log2(bracket_size))) if bracket_size >= 2 else 0
+
+        def round_name(round_no):
+            # 只有真正打完整轮淘汰赛才会出现决赛；首轮即便还没生成下一轮，
+            # 也按胜者人数给出正确名称（8 强赛事首轮 = 1/4 决赛）。
+            if round_no == total_rounds:
+                return "决赛 · 季军赛"
+            count = len(by_round.get(round_no, []))
+            return {8: "1/8 决赛", 4: "1/4 决赛", 2: "半决赛"}.get(count, f"第 {round_no} 轮")
+
         rounds = []
         for r in sorted(by_round.keys()):
             rows = []
@@ -241,7 +248,7 @@ class TournamentBracketView(RetrieveAPIView):
                     "home_score": m.home_score,
                     "away_score": m.away_score,
                 })
-            rounds.append({"round": r, "name": round_names.get(r, f"第 {r} 轮"), "matches": rows})
+            rounds.append({"round": r, "name": round_name(r), "matches": rows})
 
         return Response({"tournament_id": tournament.id, "phase": tournament.phase, "rounds": rounds})
 

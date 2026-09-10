@@ -50,7 +50,8 @@ function formatStage(t, hasKnockout, isLeague) {
 function TournamentHero({ t, isLeague, hasKnockout, champion, championMode, teamsCount, generatedRounds = 0 }) {
   const tone = toneOf(t, hasKnockout)
   const stMeta = STAGE_META[t.stage_status] || STAGE_META.not_started
-  const qualifiers = hasKnockout ? 16 : 16
+  const qualifiers = Math.max(4, Math.floor((teamsCount || 32) / 2))
+  const knockoutRounds = t.rounds || (qualifiers ? Math.round(Math.log2(qualifiers)) : 4)
   const groupSlogan = isLeague ? '8 队单循环' : `${teamsCount} 强集结`
 
   const tiles = []
@@ -76,7 +77,7 @@ function TournamentHero({ t, isLeague, hasKnockout, champion, championMode, team
           : {
               label: '瑞士轮收官',
               value: `${t.advanced_count || 0} 支晋级`,
-              sub: '决出 16 强 · 不设单败淘汰',
+              sub: `决出 ${qualifiers} 强 · 不设单败淘汰`,
               accent: 'green',
               icon: <RiseOutlined />,
             }
@@ -132,7 +133,7 @@ function TournamentHero({ t, isLeague, hasKnockout, champion, championMode, team
     } else if (t.stage_status === 'ongoing' && !isLeague && t.phase === 'knockout') {
       tiles.push({
         label: '淘汰赛轮次',
-        value: `${t.current_round || 0} / 4`,
+        value: `${t.current_round || 0} / ${knockoutRounds}`,
         sub: '冠军之路进行中',
         accent: 'pink',
         icon: <CrownFilled />,
@@ -544,6 +545,7 @@ export default function TournamentDetail() {
   const championMode = finished && knockoutFormat
   const bracketRounds = bracket?.rounds || []
   const teamsCount = t.teams?.length || (isLeague ? 8 : 32)
+  const qualifierTarget = Math.max(4, Math.floor(teamsCount / 2))
   const champion = championMode ? standings.find((s) => s.rank === 1)?.team || null : null
   const swissCurrent = t.phase === 'swiss' ? t.current_round : null
   const swissResultRows = finished && !championMode && !isLeague
@@ -617,7 +619,7 @@ export default function TournamentDetail() {
               <div className="section-head">
                 <h2 className="section-title">单败淘汰赛 · 冠军之路</h2>
                 <span className="text-2nd" style={{ fontSize: 13 }}>
-                  {bracketRounds.length ? `${bracketRounds.length} 轮 · 点击卡片查看比赛` : '等待瑞士轮决出 16 强'}
+                  {bracketRounds.length ? `${bracketRounds.length} 轮 · 点击卡片查看比赛` : `等待瑞士轮决出 ${qualifierTarget} 强`}
                 </span>
               </div>
               <KnockoutBracket rounds={bracketRounds} phase={t.phase} />

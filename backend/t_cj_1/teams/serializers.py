@@ -27,6 +27,14 @@ class PlayerSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "avatar", "position", "number", "overall"]
 
 
+class PlayerSearchSerializer(serializers.ModelSerializer):
+    team_name = serializers.CharField(source="team.name", read_only=True)
+
+    class Meta:
+        model = Player
+        fields = ["id", "name", "avatar", "position", "number", "overall", "team", "team_name"]
+
+
 class TeamHonorSerializer(serializers.ModelSerializer):
     tournament_name = serializers.CharField(source="tournament.name", read_only=True)
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { Skeleton } from 'antd'
+import { Skeleton, Button } from 'antd'
 import {
   ArrowLeftOutlined,
   TeamOutlined,
@@ -8,6 +8,7 @@ import {
   TrophyOutlined,
   ThunderboltOutlined,
   AimOutlined,
+  SwapOutlined,
 } from '@ant-design/icons'
 import { getPlayer } from '../api/teams'
 import { mediaUrl } from '../utils/mediaUrl'
@@ -182,6 +183,7 @@ function AbilityDetail({ player }) {
 
 export default function PlayerDetail() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const [player, setPlayer] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -212,7 +214,12 @@ export default function PlayerDetail() {
         <Link to={backTo} className="back-link">
           <ArrowLeftOutlined /> 返回队伍档案
         </Link>
-        <span className="detail-nav-note">CAUA · 角色档案</span>
+        <div className="pc-nav-actions">
+          <span className="detail-nav-note">CAUA · 角色档案</span>
+          <Button icon={<SwapOutlined />} onClick={() => navigate(`/players/compare?a=${player.id}`)}>
+            加入对比
+          </Button>
+        </div>
       </div>
 
       <PlayerHero player={player} />

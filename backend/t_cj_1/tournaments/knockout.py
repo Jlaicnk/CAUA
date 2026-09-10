@@ -1,18 +1,20 @@
 """Single-elimination knockout stage after the swiss qualifier.
 
-Run after swiss ends (when Tournament.knockout_after_swiss is True):
-- the 16 advanced teams are seeded 1..16 by global points order
-- first round pairs: (1,9)(2,10)(3,11)(4,12)(5,13)(6,14)(7,15)(8,16)
-- fixed bracket: QF groups (1/9 vs 3/11)(2/10 vs 4/12)(5/13 vs 7/15)(6/14 vs 8/16)
-- semi: top half (QF1 vs QF2), bottom half (QF3 vs QF4)
-- final (two semi winners) + third-place match (two semi losers)
-- matches keep accumulating wins/losses (records retained from swiss) and keep
-  settling points via teams.rating.settle_if_ready
+Supports any power-of-two qualifier size (8 for a 16-team qualifier,
+16 for a 32-team qualifier):
+- advanced teams are seeded 1..N by global points
+- first round pairs top half vs bottom half: (1, 1+N/2)(2, 2+N/2) ...
+- the first merge groups each block of four winners as (0 vs 2)(1 vs 3),
+  later rounds merge adjacent winners until the final
+- final (two winners) + third-place match (two losers of the previous round)
+- every match keeps accumulating wins/losses and settles points
 
 Final rankings:
-- champion rank=1, runner-up rank=2, third rank=3, fourth rank=4
-- remaining 28 teams ranked 5..32 by (wins desc, losses asc, points desc, rank asc)
+- champion/runner-up/third/fourth from the final and third-place match
+- the rest are ranked 5..N by (wins desc, losses asc, points desc, rank asc)
 """
+import math
+
 from datetime import datetime, timedelta
 from django.utils import timezone
 
@@ -20,12 +22,43 @@ ALIVE = "alive"
 ADVANCED = "advanced"
 ELIMINATED = "eliminated"
 
-# first-round pairings by seed: (seed_a, seed_b)
-FIRST_ROUND = [(1, 9), (2, 10), (3, 11), (4, 12), (5, 13), (6, 14), (7, 15), (8, 16)]
-# quarter-final merge: each tuple = (winner_group_a, winner_group_b) referring to
-# FIRST_ROUND index (0-based) winners
-QUARTER_MERGE = [(0, 2), (1, 3), (4, 6), (5, 7)]
-SEMI_MERGE = [(0, 1), (2, 3)]  # QF winners merged into two semis
+def _total_rounds_for_size(size):
+    return int(round(math.log2(size)))
+
+
+def _first_round_pairs(size):
+    """Top half vs bottom half: (1, 1+N/2)(2, 2+N/2) ..."""
+    half = size // 2
+    return [(i + 1, i + 1 + half) for i in range(half)]
+
+
+def _merge_first_round(ids):
+    """First merge: inside every block of four, pair (0vs2)(1vs3)."""
+    pairs = []
+    for i in range(0, len(ids), 4):
+        block = ids[i:i + 4]
+        if len(block) == 4:
+            pairs.append((block[0], block[2]))
+            pairs.append((block[1], block[3]))
+        else:
+            pairs.extend(_merge_adjacent(block))
+    return pairs
+
+
+def _merge_adjacent(ids):
+    return [(ids[i], ids[i + 1]) for i in range(0, len(ids) - 1, 2)]
+
+
+def _bracket_size(tournament):
+    first_round = _round_matches(tournament, 1)
+    return len(first_round) * 2
+
+
+def _total_rounds(tournament):
+    size = _bracket_size(tournament)
+    if size < 2:
+        return 0
+    return _total_rounds_for_size(size)
 
 
 def _aware_date(tournament, extra_days):
@@ -36,7 +69,7 @@ def _aware_date(tournament, extra_days):
 
 
 def seed_knockout(tournament):
-    """Build the 16-team knockout from the advanced teams, seeded by global points."""
+    """Build the knockout bracket from the advanced teams, seeded by global points."""
     from .models import Match, TournamentTeam
 
     adv = list(
@@ -45,23 +78,24 @@ def seed_knockout(tournament):
         .select_related("team")
     )
     adv.sort(key=lambda tt: (-tt.team.points, tt.team.rank))
-    seeds = [tt for tt in adv][:16]
-    if len(seeds) != 16:
-        raise ValueError(f"需要 16 支晋级队伍，当前 {len(seeds)}")
+    size = len(adv)
+    if size < 4 or (size & (size - 1)) != 0:
+        raise ValueError(f"晋级队伍数必须为 2 的次方（4/8/16/32），当前 {size} 支")
+    seeds = [tt for tt in adv][:size]
 
-    # mark all 16 as alive for knockout; keep wins/losses; stash seed in rank temporarily
+    # mark all qualifiers as alive for knockout; keep wins/losses; stash seed in rank
     for idx, tt in enumerate(seeds, start=1):
         tt.status = ALIVE
         tt.rank = idx
         tt.save(update_fields=["status", "rank"])
 
-    # any other advanced teams beyond 16 (shouldn't happen) -> eliminated
+    # any other advanced teams beyond the bracket size (shouldn't happen) -> eliminated
     for tt in tournament.tournament_teams.filter(status=ADVANCED).exclude(pk__in=[s.pk for s in seeds]):
         tt.status = ELIMINATED
         tt.save(update_fields=["status"])
 
     date = _aware_date(tournament, 20)
-    for (sa, sb) in FIRST_ROUND:
+    for (sa, sb) in _first_round_pairs(size):
         ha = seeds[sa - 1]
         hb = seeds[sb - 1]
         Match.objects.create(
@@ -76,7 +110,8 @@ def seed_knockout(tournament):
     tournament.phase = "knockout"
     tournament.stage_status = "ongoing"
     tournament.current_round = 1
-    tournament.save(update_fields=["phase", "stage_status", "current_round"])
+    tournament.rounds = _total_rounds_for_size(size)
+    tournament.save(update_fields=["phase", "stage_status", "current_round", "rounds"])
     return seeds
 
 
@@ -118,52 +153,35 @@ def _settle_one(match):
 
 
 def _generate_next_round(tournament, current_round):
-    """Generate the next knockout round from the winners of `current_round`.
-
-    current_round 1 -> QF (2), 2 -> SF (3), 3 -> final+3rd (4).
-    """
+    """Generate the next knockout round from the winners of `current_round`."""
     from .models import Match
 
     ms = _round_matches(tournament, current_round)
-    winners = []
-    for m in ms:
-        if m.home_score > m.away_score:
-            winners.append(m.home_team)
-        else:
-            winners.append(m.away_team)
-    # winners ordered by the original match order (which follows seed groups)
-
+    winners = [m.home_team if m.home_score > m.away_score else m.away_team for m in ms]
+    losers = [m.away_team if m.home_score > m.away_score else m.home_team for m in ms]
+    total_rounds = _total_rounds(tournament)
     next_round = current_round + 1
+
+    third_pair = None
     if current_round == 1:
-        pairs = []
-        for (ga, gb) in QUARTER_MERGE:
-            pairs.append((winners[ga], winners[gb]))
-    elif current_round == 2:
-        pairs = []
-        for (ga, gb) in SEMI_MERGE:
-            pairs.append((winners[ga], winners[gb]))
-    elif current_round == 3:
-        # final + third-place
+        pairs = _merge_first_round(winners)
+    elif current_round == total_rounds - 1:
+        # 决赛 + 季军赛
         pairs = [(winners[0], winners[1])]
-        # third-place match between the two semi losers
-        ms_semis = _round_matches(tournament, 3)
-        semis_winner_ids = []
-        for m in ms_semis:
-            semis_winner_ids.append(m.home_team_id if m.home_score > m.away_score else m.away_team_id)
-        losers = []
-        for m in ms_semis:
-            for t in (m.home_team, m.away_team):
-                if t.id not in semis_winner_ids:
-                    losers.append(t)
-        pairs.append((losers[0], losers[1]))
+        third_pair = (losers[0], losers[1])
     else:
-        raise ValueError("淘汰赛轮次超出范围")
+        pairs = _merge_adjacent(winners)
 
     date = _aware_date(tournament, 20 + current_round * 4)
     created = []
     for (h, a) in pairs:
         created.append(Match.objects.create(
             tournament=tournament, home_team=h, away_team=a,
+            match_date=date, status="scheduled", round=next_round, knockout=True,
+        ))
+    if third_pair:
+        created.append(Match.objects.create(
+            tournament=tournament, home_team=third_pair[0], away_team=third_pair[1],
             match_date=date, status="scheduled", round=next_round, knockout=True,
         ))
     return created
@@ -187,7 +205,8 @@ def settle_knockout_round(tournament):
     if unfinished:
         raise ValidationError(f"第 {cur} 轮还有 {len(unfinished)} 场未录入比分")
 
-    if cur >= 4:
+    total_rounds = _total_rounds(tournament)
+    if cur >= total_rounds:
         # final + third-place done
         finalize_tournament(tournament)
         return {"action": "finished", "message": "淘汰赛结束，已决出冠军（含季军赛）"}
@@ -199,10 +218,11 @@ def settle_knockout_round(tournament):
 
 
 def finalize_tournament(tournament):
-    """Assign final ranks 1..4 from final + third-place, and 5..32 by sort rule."""
+    """Assign final ranks 1..4 from final + third-place, and the rest by sort rule."""
     from teams.models import Team
 
-    ms = _round_matches(tournament, 4)
+    total_rounds = _total_rounds(tournament)
+    ms = _round_matches(tournament, total_rounds)
     if len(ms) < 1:
         raise ValueError("决赛尚未生成")
     # final was created first in _generate_next_round; third-place second.
@@ -224,7 +244,7 @@ def finalize_tournament(tournament):
         tts[tw.id].save(update_fields=["rank"])
         tts[tl.id].save(update_fields=["rank"])
 
-    # remaining 28 -> rank 5..32
+    # remaining teams -> rank 5..N
     top4_ids = {fw.id, fl.id}
     if third:
         top4_ids.add(third.home_team_id if third.home_score > third.away_score else third.away_team_id)

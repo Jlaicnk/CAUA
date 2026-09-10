@@ -1,7 +1,13 @@
 from rest_framework import viewsets, generics
 from rest_framework.response import Response
+from django.db.models import Q
 from .models import Team, Player, PointsChange
-from .serializers import TeamListSerializer, TeamDetailSerializer, PlayerDetailSerializer
+from .serializers import (
+    TeamListSerializer,
+    TeamDetailSerializer,
+    PlayerDetailSerializer,
+    PlayerSearchSerializer,
+)
 
 
 class TeamViewSet(viewsets.ReadOnlyModelViewSet):
@@ -124,3 +130,35 @@ class TeamHistoryView(generics.RetrieveAPIView):
 class PlayerDetailView(generics.RetrieveAPIView):
     queryset = Player.objects.prefetch_related("honors__tournament")
     serializer_class = PlayerDetailSerializer
+
+
+class PlayerListView(generics.ListAPIView):
+    """球员搜索/筛选，用于对比页选择球员。"""
+
+    serializer_class = PlayerSearchSerializer
+
+    def get_queryset(self):
+        qs = Player.objects.select_related("team")
+        params = self.request.query_params
+        search = (params.get("search") or "").strip()
+        position = (params.get("position") or "").strip()
+        team = params.get("team")
+        if search:
+            qs = qs.filter(Q(name__icontains=search) | Q(team__name__icontains=search))
+        if position:
+            qs = qs.filter(position=position)
+        if team:
+            qs = qs.filter(team_id=team)
+
+        players = list(qs)
+        ordering = params.get("ordering") or "-overall"
+        if ordering in ("overall", "-overall"):
+            players.sort(key=lambda p: p.overall, reverse=ordering.startswith("-"))
+        else:
+            players.sort(key=lambda p: (p.team_id, p.number))
+
+        try:
+            limit = min(int(params.get("limit", 80)), 300)
+        except (TypeError, ValueError):
+            limit = 80
+        return players[:limit]
